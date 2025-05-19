@@ -45,6 +45,8 @@
 
 MCP Unity is an implementation of the Model Context Protocol for Unity Editor, allowing AI assistants to interact with your Unity projects. This package provides a bridge between Unity and a Node.js server that implements the MCP protocol, enabling AI agents like Claude, Windsurf, and Cursor to execute operations within the Unity Editor.
 
+For a deeper look at how the pieces fit together see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Features
 
 <a href="https://glama.ai/mcp/servers/@CoderGamester/mcp-unity">
