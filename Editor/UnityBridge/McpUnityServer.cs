@@ -176,9 +176,14 @@ namespace McpUnity.Unity
             AddAssetToSceneTool addAssetToSceneTool = new AddAssetToSceneTool();
             _tools.Add(addAssetToSceneTool.Name, addAssetToSceneTool);
 
+
             // Register TakeScreenshotTool
             TakeScreenshotTool takeScreenshotTool = new TakeScreenshotTool();
             _tools.Add(takeScreenshotTool.Name, takeScreenshotTool);
+            // Register CreateTextAssetTool
+            CreateTextAssetTool createTextAssetTool = new CreateTextAssetTool();
+            _tools.Add(createTextAssetTool.Name, createTextAssetTool);
+
         }
         
         /// <summary>
