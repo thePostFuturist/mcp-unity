@@ -175,6 +175,10 @@ namespace McpUnity.Unity
             // Register AddAssetToSceneTool
             AddAssetToSceneTool addAssetToSceneTool = new AddAssetToSceneTool();
             _tools.Add(addAssetToSceneTool.Name, addAssetToSceneTool);
+
+            // Register CreateTextAssetTool
+            CreateTextAssetTool createTextAssetTool = new CreateTextAssetTool();
+            _tools.Add(createTextAssetTool.Name, createTextAssetTool);
         }
         
         /// <summary>

@@ -83,6 +83,8 @@ MCP Unity 通过将 Unity `Library/PackedCache` 文件夹添加到您的工作�
 
 - `add_asset_to_scene`: 将 AssetDatabase 中的资源添加到 Unity 场景中
   > **示例提示:** "将我的项目中的 Player 预制体添加到当前场景"
+- `create_text_asset`: 在 Unity 项目中创建文本文件
+  > **示例提示:** "在 Assets/Docs 下创建 README.txt 文件"
 
 ### MCP 服务器资源
 
