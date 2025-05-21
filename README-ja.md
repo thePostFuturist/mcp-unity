@@ -82,6 +82,8 @@ MCP Unityは、Unityの`Library/PackedCache`フォルダーをワークスペー
 
 - `add_asset_to_scene`: AssetDatabaseからアセットをUnityシーンに追加
   > **例:** "プロジェクトからPlayerプレハブを現在のシーンに追加"
+- `take_screenshot`: ゲームビューをスクリーンショットして `Assets/Screenshots` に保存
+  > **例:** "ゲームビューのスクリーンショットを撮影"
 
 ### MCPサーバーリソース
 
