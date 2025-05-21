@@ -36,7 +36,8 @@ namespace McpUnity.Tools
             string fileName = parameters?["fileName"]?.ToObject<string>();
             if (string.IsNullOrEmpty(fileName))
             {
-                fileName = $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+                fileName = $"screenshot.png";
+                // fileName = $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
             }
 
             string fullPath = Path.Combine(screenshotsFolder, fileName);
