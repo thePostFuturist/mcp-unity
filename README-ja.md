@@ -82,6 +82,8 @@ MCP Unityは、Unityの`Library/PackedCache`フォルダーをワークスペー
 
 - `add_asset_to_scene`: AssetDatabaseからアセットをUnityシーンに追加
   > **例:** "プロジェクトからPlayerプレハブを現在のシーンに追加"
+- `create_text_asset`: Unityプロジェクトにテキストファイルを作成
+  > **例:** "Assets/DocsにREADME.txtファイルを作成"
 
 ### MCPサーバーリソース
 
