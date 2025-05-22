@@ -14,6 +14,7 @@ import { registerAddAssetToSceneTool } from './tools/addAssetToSceneTool.js';
 import { registerUpdateGameObjectTool } from './tools/updateGameObjectTool.js';
 
 import { registerTakeScreenshotTool } from './tools/takeScreenshotTool.js';
+import { registerGetScreenshotFunctionTool } from './tools/getScreenshotFunctionTool.js';
 
 import { registerCreateTextAssetTool } from './tools/createTextAssetTool.js';
 
@@ -63,6 +64,7 @@ registerAddAssetToSceneTool(server, mcpUnity, toolLogger);
 registerUpdateGameObjectTool(server, mcpUnity, toolLogger);
 
 registerTakeScreenshotTool(server, mcpUnity, toolLogger);
+registerGetScreenshotFunctionTool(server, mcpUnity, toolLogger);
 
 registerCreateTextAssetTool(server, mcpUnity, toolLogger);
 

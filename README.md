@@ -88,6 +88,9 @@ The following tools are available for manipulating and querying Unity scenes and
 - `take_screenshot`: Captures the Game View and saves it under `Assets/Screenshots`
   > **Example prompt:** "Take a screenshot of the Game View"
 
+- `get_screenshot_function`: Retrieves the first screenshot image from `Assets/Screenshots`
+  > **Example prompt:** "Show me the most recent screenshot"
+
 - `create_text_asset`: Creates a text file inside the Unity project
   > **Example prompt:** "Create a README.txt file in Assets/Docs with custom content"
 
@@ -222,7 +225,7 @@ Open the MCP configuration file of your AI client (e.g. claude_desktop_config.js
 Once both the Unity server and the Node.js server are running, connect your MCP-enabled IDE or AI assistant. You can then trigger tools and fetch resources with natural language prompts. Examples include:
 
 - **Take a screenshot** using the `take_screenshot` tool.
-- **Retrieve the latest screenshot** by reading the `unity://screenshot` resource.
+- **Retrieve the latest screenshot** using the `get_screenshot_function` tool or the `unity://screenshot` resource.
 - **List installed packages** with the `unity://packages` resource.
 
 ## Optional: Set WebSocket Port
