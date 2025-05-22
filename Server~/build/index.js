@@ -21,6 +21,7 @@ import { registerGetPackagesResource } from './resources/getPackagesResource.js'
 import { registerGetAssetsResource } from './resources/getAssetsResource.js';
 import { registerGetTestsResource } from './resources/getTestsResource.js';
 import { registerGetGameObjectResource } from './resources/getGameObjectResource.js';
+import { registerGetScreenshotResource } from './resources/getScreenshotResource.js';
 import { registerGameObjectHandlingPrompt } from './prompts/gameobjectHandlingPrompt.js';
 // Initialize loggers
 const serverLogger = new Logger('Server', LogLevel.INFO);
@@ -60,6 +61,7 @@ registerGetConsoleLogsResource(server, mcpUnity, resourceLogger);
 registerGetHierarchyResource(server, mcpUnity, resourceLogger);
 registerGetPackagesResource(server, mcpUnity, resourceLogger);
 registerGetAssetsResource(server, mcpUnity, resourceLogger);
+registerGetScreenshotResource(server, mcpUnity, resourceLogger);
 // Register all prompts into the MCP server
 registerGameObjectHandlingPrompt(server);
 // Server startup function
