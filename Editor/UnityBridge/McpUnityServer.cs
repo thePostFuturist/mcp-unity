@@ -218,6 +218,10 @@ namespace McpUnity.Unity
             // Register GetGameObjectResource
             GetGameObjectResource getGameObjectResource = new GetGameObjectResource();
             _resources.Add(getGameObjectResource.Name, getGameObjectResource);
+
+            // Register GetScreenshotResource
+            GetScreenshotResource getScreenshotResource = new GetScreenshotResource();
+            _resources.Add(getScreenshotResource.Name, getScreenshotResource);
         }
         
         /// <summary>

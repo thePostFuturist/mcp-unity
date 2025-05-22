@@ -115,6 +115,9 @@ The following tools are available for manipulating and querying Unity scenes and
 - `unity://tests/{testMode}`: Retrieves information about tests in the Unity Test Runner
   > **Example prompt:** "List all available tests in my Unity project"
 
+- `unity://screenshot`: Retrieves the first screenshot image from `Assets/Screenshots`
+  > **Example prompt:** "Get the latest screenshot from my project"
+
 ## Requirements
 - Unity 2022.3 or later - to [install the server](#install-server)
 - Node.js 18 or later - to [start the server](#start-server)
@@ -213,6 +216,14 @@ Open the MCP configuration file of your AI client (e.g. claude_desktop_config.js
 ![connect](https://github.com/user-attachments/assets/2e266a8b-8ba3-4902-b585-b220b11ab9a2)
 
 > When the AI client connects to the WebSocket server, it will automatically show in the green box in the window
+
+## Usage
+
+Once both the Unity server and the Node.js server are running, connect your MCP-enabled IDE or AI assistant. You can then trigger tools and fetch resources with natural language prompts. Examples include:
+
+- **Take a screenshot** using the `take_screenshot` tool.
+- **Retrieve the latest screenshot** by reading the `unity://screenshot` resource.
+- **List installed packages** with the `unity://packages` resource.
 
 ## Optional: Set WebSocket Port
 By default, the WebSocket server runs on port 8090. You can change this port in two ways:
