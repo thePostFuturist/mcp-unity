@@ -31,14 +31,14 @@ namespace McpUnity.Tools
             {
                 Directory.CreateDirectory(screenshotsFolder);
             }
-
+            string fileName = $"screenshot.png";
             // Determine file name
-            string fileName = parameters?["fileName"]?.ToObject<string>();
-            if (string.IsNullOrEmpty(fileName))
-            {
-                fileName = $"screenshot.png";
-                // fileName = $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
-            }
+
+            // string fileName = parameters?["fileName"]?.ToObject<string>();
+            // if (string.IsNullOrEmpty(fileName))
+            // {
+            //     fileName = $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+            // }
 
             string fullPath = Path.Combine(screenshotsFolder, fileName);
 
