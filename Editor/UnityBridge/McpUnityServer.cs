@@ -180,6 +180,10 @@ namespace McpUnity.Unity
             // Register TakeScreenshotTool
             TakeScreenshotTool takeScreenshotTool = new TakeScreenshotTool();
             _tools.Add(takeScreenshotTool.Name, takeScreenshotTool);
+
+            // Register GetScreenshotFunctionTool
+            GetScreenshotFunctionTool getScreenshotFunctionTool = new GetScreenshotFunctionTool();
+            _tools.Add(getScreenshotFunctionTool.Name, getScreenshotFunctionTool);
             // Register CreateTextAssetTool
             CreateTextAssetTool createTextAssetTool = new CreateTextAssetTool();
             _tools.Add(createTextAssetTool.Name, createTextAssetTool);
