@@ -23,11 +23,11 @@ namespace McpUnity.Unity
         
         private static McpUnitySettings _instance;
 
-        // Server settings
-        public int Port { get; set; } = 8090;
+        [Tooltip("Port number for MCP server")]
+        public int Port = 8090;
         
         [Tooltip("Timeout in seconds for tool request")]
-        public int RequestTimeoutSeconds { get; set; } = RequestTimeoutMinimum;
+        public int RequestTimeoutSeconds = RequestTimeoutMinimum;
         
         [Tooltip("Whether to automatically start the MCP server when Unity opens")]
         public bool AutoStartServer = true;
@@ -72,18 +72,6 @@ namespace McpUnity.Unity
                     string json = File.ReadAllText(SettingsPath);
                     JsonUtility.FromJsonOverwrite(json, this);
                 }
-                
-                // Check for environment variable PORT
-                string envPort = System.Environment.GetEnvironmentVariable(EnvUnityPort);
-                if (!string.IsNullOrEmpty(envPort) && int.TryParse(envPort, out int port))
-                {
-                    Port = port;
-                }
-                string envTimeout = System.Environment.GetEnvironmentVariable(EnvUnityRequestTimeout);
-                if (!string.IsNullOrEmpty(envTimeout) && int.TryParse(envTimeout, out int timeout))
-                {
-                    RequestTimeoutSeconds = timeout;
-                }
             }
             catch (Exception ex)
             {
@@ -95,6 +83,9 @@ namespace McpUnity.Unity
         /// <summary>
         /// Save settings to disk
         /// </summary>
+        /// <remarks>
+        /// WARNING: This file is also read by the MCP server. Changes here will require updates to it. See mcpUnity.ts
+        /// </remarks>
         public void SaveSettings()
         {
             try
@@ -102,14 +93,6 @@ namespace McpUnity.Unity
                 // Save settings to McpUnitySettings.json
                 string json = JsonUtility.ToJson(this, true);
                 File.WriteAllText(SettingsPath, json);
-
-                // Set environment variable PORT for the Node.js process
-                // EnvironmentVariableTarget.User and EnvironmentVariableTarget.Machine should be used on .NET implementations running on Windows systems only.
-                // For non-Windows systems, User and Machine are treated as Process.
-                // Using Process target for broader compatibility.
-                // see: https://learn.microsoft.com/en-us/dotnet/api/system.environmentvariabletarget?view=net-8.0#remarks
-                Environment.SetEnvironmentVariable(EnvUnityPort, Port.ToString(), EnvironmentVariableTarget.Process);
-                Environment.SetEnvironmentVariable(EnvUnityRequestTimeout, RequestTimeoutSeconds.ToString(), EnvironmentVariableTarget.Process);
             }
             catch (Exception ex)
             {
