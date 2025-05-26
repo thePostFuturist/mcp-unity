@@ -89,6 +89,9 @@ MCP Unityは、Unityの`Library/PackedCache`フォルダーをワークスペー
 - `create_text_asset`: Unityプロジェクトにテキストファイルを作成
   > **例:** "Assets/DocsにREADME.txtファイルを作成"
 
+- `get_text_asset`: Unityプロジェクト内のテキストファイルの内容を取得
+  > **例:** "Assets/Docs/README.txt の内容を表示"
+
 
 ### MCPサーバーリソース
 

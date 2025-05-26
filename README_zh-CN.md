@@ -90,6 +90,9 @@ MCP Unity 通过将 Unity `Library/PackedCache` 文件夹添加到您的工作�
 - `create_text_asset`: 在 Unity 项目中创建文本文件
   > **示例提示:** "在 Assets/Docs 下创建 README.txt 文件"
 
+- `get_text_asset`: 读取 Unity 项目中文本文件的内容
+  > **示例提示:** "查看 Assets/Docs/README.txt 的内容"
+
 
 ### MCP 服务器资源
 

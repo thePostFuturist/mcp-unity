@@ -217,6 +217,9 @@ namespace McpUnity.Unity
             // Register CreateTextAssetTool
             CreateTextAssetTool createTextAssetTool = new CreateTextAssetTool();
             _tools.Add(createTextAssetTool.Name, createTextAssetTool);
+            // Register GetTextAssetTool
+            GetTextAssetTool getTextAssetTool = new GetTextAssetTool();
+            _tools.Add(getTextAssetTool.Name, getTextAssetTool);
 
         }
         
