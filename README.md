@@ -94,6 +94,9 @@ The following tools are available for manipulating and querying Unity scenes and
 - `create_text_asset`: Creates a text file inside the Unity project
   > **Example prompt:** "Create a README.txt file in Assets/Docs with custom content"
 
+- `get_text_asset`: Reads the contents of a text file from the Unity project
+  > **Example prompt:** "Show me the contents of Assets/Docs/README.txt"
+
 
 ### MCP Server Resources
 

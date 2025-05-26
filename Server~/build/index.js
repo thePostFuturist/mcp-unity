@@ -15,6 +15,7 @@ import { registerUpdateGameObjectTool } from './tools/updateGameObjectTool.js';
 import { registerTakeScreenshotTool } from './tools/takeScreenshotTool.js';
 import { registerGetScreenshotFunctionTool } from './tools/getScreenshotFunctionTool.js';
 import { registerCreateTextAssetTool } from './tools/createTextAssetTool.js';
+import { registerGetTextAssetTool } from './tools/getTextAssetTool.js';
 import { registerGetMenuItemsResource } from './resources/getMenuItemResource.js';
 import { registerGetConsoleLogsResource } from './resources/getConsoleLogsResource.js';
 import { registerGetHierarchyResource } from './resources/getScenesHierarchyResource.js';
@@ -55,6 +56,7 @@ registerUpdateGameObjectTool(server, mcpUnity, toolLogger);
 registerTakeScreenshotTool(server, mcpUnity, toolLogger);
 registerGetScreenshotFunctionTool(server, mcpUnity, toolLogger);
 registerCreateTextAssetTool(server, mcpUnity, toolLogger);
+registerGetTextAssetTool(server, mcpUnity, toolLogger);
 // Register all resources into the MCP server
 registerGetTestsResource(server, mcpUnity, resourceLogger);
 registerGetGameObjectResource(server, mcpUnity, resourceLogger);
