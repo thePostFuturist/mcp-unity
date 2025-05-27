@@ -306,25 +306,36 @@ namespace McpUnity.Utils
         /// <param name="workingDirectory">The working directory where the npm command should be executed.</param>
         public static void RunNpmCommand(string arguments, string workingDirectory)
         {
-            string shellCommand = "/bin/bash";
-            string shellArguments = $"-c \"npm {arguments}\"";
-
-            if (Application.platform == RuntimePlatform.WindowsEditor)
-            {
-                shellCommand = "cmd.exe";
-                shellArguments = $"/c npm {arguments}";
-            }
+            string npmExecutable = McpUnitySettings.Instance.NpmExecutablePath;
+            bool useCustomNpmPath = !string.IsNullOrWhiteSpace(npmExecutable);
 
             System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = shellCommand,
-                Arguments = shellArguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                UseShellExecute = false,
+                UseShellExecute = false, // Important for redirection and direct execution
                 CreateNoWindow = true
             };
+
+            if (useCustomNpmPath)
+            {
+                // Use the custom path directly
+                startInfo.FileName = npmExecutable;
+                startInfo.Arguments = arguments;
+            }
+            else if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                // Fallback to cmd.exe to find 'npm' in PATH
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = $"/c npm {arguments}";
+            }
+            else // macOS / Linux
+            {
+                // Fallback to /bin/bash to find 'npm' in PATH
+                startInfo.FileName = "/bin/bash";
+                startInfo.Arguments = $"-c \"npm {arguments}\"";
+            }
 
             try
             {
