@@ -354,24 +354,18 @@ namespace McpUnity.Utils
 
                     if (process.ExitCode == 0)
                     {
-                        Debug.Log($"[MCP Unity] npm {arguments} completed successfully in {workingDirectory}.");
+                        Debug.Log($"[MCP Unity] npm {arguments} completed successfully in {workingDirectory}.\n{output}");
                     }
                     else
                     {
-                        Debug.LogError($"[MCP Unity] npm {arguments} failed in {workingDirectory}. Exit Code: {process.ExitCode}");
+                        Debug.LogError($"[MCP Unity] npm {arguments} failed in {workingDirectory}. Exit Code: {process.ExitCode}. Error: {error}");
                     }
-                    
-                    if (!string.IsNullOrEmpty(output)) Debug.Log($"[MCP Unity] Output:\n{output}");
-                    if (!string.IsNullOrEmpty(error)) Debug.LogError($"[MCP Unity] Error:\n{error}");
                 }
-            }
-            catch (System.ComponentModel.Win32Exception ex) // Catch specific exception for "file not found"
-            {
-                Debug.LogError($"[MCP Unity] Failed to run npm command '{shellCommand} {shellArguments}'. Ensure Node.js and npm are installed and in your system's PATH. Error: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MCP Unity] Exception while running npm command '{shellCommand} {shellArguments}' in {workingDirectory}: {ex.Message}\nDetails: {ex.StackTrace}");
+                // Use commandToLog here
+                Debug.LogError($"[MCP Unity] Exception while running npm {arguments} in {workingDirectory}. Error: {ex.Message}");
             }
         }
     }

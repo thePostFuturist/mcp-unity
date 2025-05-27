@@ -74,6 +74,11 @@ namespace McpUnity.Unity
                     string json = File.ReadAllText(SettingsPath);
                     JsonUtility.FromJsonOverwrite(json, this);
                 }
+                else
+                {
+                    // Create default settings file on the first time initialization
+                    SaveSettings();
+                }
             }
             catch (Exception ex)
             {
