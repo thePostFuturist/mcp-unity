@@ -80,7 +80,12 @@ namespace McpUnity.Services
             {
                 foreach (var entry in _logEntries)
                 {
-                    if (filter && !entry.Type.ToString().Equals(logType, System.StringComparison.OrdinalIgnoreCase))
+                    // Map MCP log types to Unity log types
+                    string unityLogType = logType;
+                    if (logType.Equals("info", System.StringComparison.OrdinalIgnoreCase))
+                        unityLogType = "Log";
+                    
+                    if (filter && !entry.Type.ToString().Equals(unityLogType, System.StringComparison.OrdinalIgnoreCase))
                         continue;
                     logsArray.Add(new JObject
                     {
