@@ -12,6 +12,12 @@ namespace McpUnity.Services
     /// </summary>
     public class ConsoleLogsService : IConsoleLogsService
     {
+        // Static mapping for MCP log types to Unity log types
+        private static readonly Dictionary<string, string> LogTypeMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "info", "Log" }
+        };
+        
         // Structure to store log information
         private class LogEntry
         {
@@ -76,15 +82,13 @@ namespace McpUnity.Services
             JArray logsArray = new JArray();
             bool filter = !string.IsNullOrEmpty(logType);
             
+            // Map MCP log types to Unity log types outside the loop for better performance
+            string unityLogType = filter && LogTypeMapping.TryGetValue(logType, out string mapped) ? mapped : logType;
+            
             lock (_logEntries)
             {
                 foreach (var entry in _logEntries)
                 {
-                    // Map MCP log types to Unity log types
-                    string unityLogType = logType;
-                    if (logType.Equals("info", System.StringComparison.OrdinalIgnoreCase))
-                        unityLogType = "Log";
-                    
                     if (filter && !entry.Type.ToString().Equals(unityLogType, System.StringComparison.OrdinalIgnoreCase))
                         continue;
                     logsArray.Add(new JObject
