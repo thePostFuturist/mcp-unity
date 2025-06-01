@@ -26,33 +26,11 @@ namespace McpUnity.Resources
         /// <returns>A JObject containing the list of logs with pagination info</returns>
         public override JObject Fetch(JObject parameters)
         {
-            string logType = null;
-            int offset = 0;
-            int limit = 100;
+            string logType = parameters?["logType"]?.ToString();
+            if (string.IsNullOrWhiteSpace(logType)) logType = null;
             
-            if (parameters != null)
-            {
-                // Extract logType
-                if (parameters.ContainsKey("logType") && parameters["logType"] != null)
-                {
-                    logType = parameters["logType"].ToString()?.ToLowerInvariant();
-                    if (string.IsNullOrWhiteSpace(logType))
-                    {
-                        logType = null;
-                    }
-                }
-                
-                // Extract pagination parameters
-                if (parameters.ContainsKey("offset") && parameters["offset"] != null)
-                {
-                    int.TryParse(parameters["offset"].ToString(), out offset);
-                }
-                
-                if (parameters.ContainsKey("limit") && parameters["limit"] != null)
-                {
-                    int.TryParse(parameters["limit"].ToString(), out limit);
-                }
-            }
+            int offset = Math.Max(0, GetIntParameter(parameters, "offset", 0));
+            int limit = Math.Max(1, Math.Min(1000, GetIntParameter(parameters, "limit", 100)));
 
             // Use the new paginated method
             JObject result = _consoleLogsService.GetLogsAsJson(logType, offset, limit);
@@ -62,9 +40,25 @@ namespace McpUnity.Resources
             
             var pagination = result["pagination"] as JObject;
             string typeFilter = logType != null ? $" of type '{logType}'" : "";
-            result["message"] = $"Retrieved {pagination["returnedCount"]} of {pagination["filteredCount"]} log entries{typeFilter} (offset: {offset}, limit: {limit})";
+            int returnedCount = pagination?["returnedCount"]?.Value<int>() ?? 0;
+            int filteredCount = pagination?["filteredCount"]?.Value<int>() ?? 0;
+            result["message"] = $"Retrieved {returnedCount} of {filteredCount} log entries{typeFilter} (offset: {offset}, limit: {limit})";
 
             return result;
+        }
+
+        /// <summary>
+        /// Helper method to safely extract integer parameters with default values
+        /// </summary>
+        /// <param name="parameters">JObject containing parameters</param>
+        /// <param name="key">Parameter key to extract</param>
+        /// <param name="defaultValue">Default value if parameter is missing or invalid</param>
+        /// <returns>Extracted integer value or default</returns>
+        private static int GetIntParameter(JObject parameters, string key, int defaultValue)
+        {
+            if (parameters?[key] != null && int.TryParse(parameters[key].ToString(), out int value))
+                return value;
+            return defaultValue;
         }
 
 
