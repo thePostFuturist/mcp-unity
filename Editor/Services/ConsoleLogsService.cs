@@ -13,9 +13,11 @@ namespace McpUnity.Services
     public class ConsoleLogsService : IConsoleLogsService
     {
         // Static mapping for MCP log types to Unity log types
-        private static readonly Dictionary<string, string> LogTypeMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        // Some MCP types map to multiple Unity types (e.g., "error" includes Error, Exception and Assert)
+        private static readonly Dictionary<string, HashSet<string>> LogTypeMapping = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
         {
-            { "info", "Log" }
+            { "info", new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Log" } },
+            { "error", new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Error", "Exception", "Assert" } }
         };
         
         // Structure to store log information
@@ -83,13 +85,25 @@ namespace McpUnity.Services
             bool filter = !string.IsNullOrEmpty(logType);
             
             // Map MCP log types to Unity log types outside the loop for better performance
-            string unityLogType = filter && LogTypeMapping.TryGetValue(logType, out string mapped) ? mapped : logType;
+            HashSet<string> unityLogTypes = null;
+            if (filter)
+            {
+                if (LogTypeMapping.TryGetValue(logType, out var mapped))
+                {
+                    unityLogTypes = mapped;
+                }
+                else
+                {
+                    // If no mapping exists, create a set with the original type for case-insensitive comparison
+                    unityLogTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { logType };
+                }
+            }
             
             lock (_logEntries)
             {
                 foreach (var entry in _logEntries)
                 {
-                    if (filter && !entry.Type.ToString().Equals(unityLogType, System.StringComparison.OrdinalIgnoreCase))
+                    if (filter && !unityLogTypes.Contains(entry.Type.ToString()))
                         continue;
                     logsArray.Add(new JObject
                     {
