@@ -142,7 +142,7 @@ namespace McpUnity.Unity
             }
             
             EditorGUILayout.Space();
-            
+
             // Server control buttons
             EditorGUILayout.BeginHorizontal();
             
@@ -200,6 +200,16 @@ namespace McpUnity.Unity
             }
                 
             EditorGUILayout.EndVertical();
+
+            // NPM Executable Path
+            string newNpmPath = EditorGUILayout.TextField(new GUIContent("NPM Executable Path", "Optional: Full path to the npm executable (e.g., /Users/user/.asdf/shims/npm or C:\\path\\to\\npm.cmd). If not set, 'npm' from the system PATH will be used."), settings.NpmExecutablePath);
+            if (newNpmPath != settings.NpmExecutablePath)
+            {
+                settings.NpmExecutablePath = newNpmPath;
+                settings.SaveSettings();
+            }
+            
+            EditorGUILayout.Space();
             
             // MCP Config generation section
             EditorGUILayout.Space();
