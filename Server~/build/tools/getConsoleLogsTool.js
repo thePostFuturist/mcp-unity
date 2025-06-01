@@ -2,12 +2,25 @@ import * as z from "zod";
 import { McpUnityError, ErrorType } from "../utils/errors.js";
 // Constants for the tool
 const toolName = "get_console_logs";
-const toolDescription = "Retrieves logs from the Unity console";
+const toolDescription = "Retrieves logs from the Unity console with pagination support to avoid token limits";
 const paramsSchema = z.object({
     logType: z
         .enum(["info", "warning", "error"])
         .optional()
         .describe("The type of logs to retrieve (info, warning, error) - defaults to all logs if not specified"),
+    offset: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe("Starting index for pagination (0-based, defaults to 0)"),
+    limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(500)
+        .optional()
+        .describe("Maximum number of logs to return (defaults to 50, max 500 to avoid token limits)")
 });
 /**
  * Creates and registers the Get Console Logs tool with the MCP server
@@ -42,13 +55,15 @@ export function registerGetConsoleLogsTool(server, mcpUnity, logger) {
  * @throws McpUnityError if the request to Unity fails
  */
 async function toolHandler(mcpUnity, params) {
-    const { logType } = params;
+    const { logType, offset = 0, limit = 50 } = params;
     // Send request to Unity using the same method name as the resource
     // This allows reusing the existing Unity-side implementation
     const response = await mcpUnity.sendRequest({
         method: "get_console_logs",
         params: {
             logType: logType,
+            offset: offset,
+            limit: limit,
         },
     });
     if (!response.success) {

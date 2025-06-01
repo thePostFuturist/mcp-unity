@@ -21,6 +21,10 @@ namespace McpUnity.Services
             public DateTime Timestamp { get; set; }
         }
         
+        // Constants for log management
+        private const int MaxLogEntries = 1000;
+        private const int CleanupThreshold = 200; // Remove oldest entries when exceeding max
+        
         // Collection to store all log messages
         private readonly List<LogEntry> _logEntries = new List<LogEntry>();
         
@@ -72,27 +76,74 @@ namespace McpUnity.Services
         /// <returns>JArray containing all logs</returns>
         public JArray GetAllLogsAsJson(string logType = "")
         {
+            var result = GetLogsAsJson(logType, 0, int.MaxValue);
+            return result["logs"] as JArray;
+        }
+        
+        /// <summary>
+        /// Get logs as a JSON array with pagination support
+        /// </summary>
+        /// <param name="logType">Filter by log type (empty for all)</param>
+        /// <param name="offset">Starting index (0-based)</param>
+        /// <param name="limit">Maximum number of logs to return (default: 100)</param>
+        /// <returns>JObject containing logs array and pagination info</returns>
+        public JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100)
+        {
             // Convert log entries to a JSON array, filtering by logType if provided
             JArray logsArray = new JArray();
             bool filter = !string.IsNullOrEmpty(logType);
+            int totalCount = 0;
+            int filteredCount = 0;
+            int currentIndex = 0;
             
             lock (_logEntries)
             {
+                // First pass: count total and filtered entries
                 foreach (var entry in _logEntries)
                 {
+                    totalCount++;
+                    if (!filter || entry.Type.ToString().Equals(logType, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        filteredCount++;
+                    }
+                }
+                
+                // Second pass: collect the requested page (newest first)
+                for (int i = _logEntries.Count - 1; i >= 0; i--)
+                {
+                    var entry = _logEntries[i];
                     if (filter && !entry.Type.ToString().Equals(logType, System.StringComparison.OrdinalIgnoreCase))
                         continue;
-                    logsArray.Add(new JObject
+                        
+                    if (currentIndex >= offset && logsArray.Count < limit)
                     {
-                        ["message"] = entry.Message,
-                        ["stackTrace"] = entry.StackTrace,
-                        ["type"] = entry.Type.ToString(),
-                        ["timestamp"] = entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")
-                    });
+                        logsArray.Add(new JObject
+                        {
+                            ["message"] = entry.Message,
+                            ["stackTrace"] = entry.StackTrace,
+                            ["type"] = entry.Type.ToString(),
+                            ["timestamp"] = entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        });
+                    }
+                    
+                    currentIndex++;
+                    if (logsArray.Count >= limit) break;
                 }
             }
             
-            return logsArray;
+            return new JObject
+            {
+                ["logs"] = logsArray,
+                ["pagination"] = new JObject
+                {
+                    ["offset"] = offset,
+                    ["limit"] = limit,
+                    ["totalCount"] = totalCount,
+                    ["filteredCount"] = filteredCount,
+                    ["returnedCount"] = logsArray.Count,
+                    ["hasMore"] = offset + logsArray.Count < filteredCount
+                }
+            };
         }
         
         /// <summary>
@@ -103,6 +154,34 @@ namespace McpUnity.Services
             lock (_logEntries)
             {
                 _logEntries.Clear();
+            }
+        }
+        
+        /// <summary>
+        /// Manually clean up old log entries, keeping only the most recent ones
+        /// </summary>
+        /// <param name="keepCount">Number of recent entries to keep (default: 500)</param>
+        public void CleanupOldLogs(int keepCount = 500)
+        {
+            lock (_logEntries)
+            {
+                if (_logEntries.Count > keepCount)
+                {
+                    int removeCount = _logEntries.Count - keepCount;
+                    _logEntries.RemoveRange(0, removeCount);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Get current log count
+        /// </summary>
+        /// <returns>Number of stored log entries</returns>
+        public int GetLogCount()
+        {
+            lock (_logEntries)
+            {
+                return _logEntries.Count;
             }
         }
         
@@ -154,6 +233,12 @@ namespace McpUnity.Services
                     Type = type,
                     Timestamp = DateTime.Now
                 });
+                
+                // Clean up old entries if we exceed the maximum
+                if (_logEntries.Count > MaxLogEntries)
+                {
+                    _logEntries.RemoveRange(0, CleanupThreshold);
+                }
             }
         }
         

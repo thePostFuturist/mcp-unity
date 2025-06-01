@@ -3,7 +3,7 @@ import { McpUnityError, ErrorType } from '../utils/errors.js';
 // Constants for the resource
 const resourceName = 'get_console_logs';
 const resourceMimeType = 'application/json';
-const resourceUri = 'unity://logs/{logType}';
+const resourceUri = 'unity://logs/{logType}?offset={offset}&limit={limit}';
 const resourceTemplate = new ResourceTemplate(resourceUri, {
     list: () => listLogTypes(resourceMimeType)
 });
@@ -13,25 +13,25 @@ function listLogTypes(resourceMimeType) {
             {
                 uri: `unity://logs/`,
                 name: "All logs",
-                description: "Retrieve all Unity console logs",
+                description: "Retrieve Unity console logs (newest first). Use pagination to avoid token limits: ?offset=0&limit=50 for recent logs. Default limit=100 may be too large for LLM context.",
                 mimeType: resourceMimeType
             },
             {
                 uri: `unity://logs/error`,
                 name: "Error logs",
-                description: "Retrieve only error logs from the Unity console",
+                description: "Retrieve only error logs from Unity console (newest first). Use ?offset=0&limit=20 to avoid token limits. Large log sets may exceed LLM context window.",
                 mimeType: resourceMimeType
             },
             {
                 uri: `unity://logs/warning`,
                 name: "Warning logs",
-                description: "Retrieve only warning logs from the Unity console",
+                description: "Retrieve only warning logs from Unity console (newest first). Use pagination ?offset=0&limit=30 to manage token usage effectively.",
                 mimeType: resourceMimeType
             },
             {
                 uri: `unity://logs/info`,
                 name: "Info logs",
-                description: "Retrieve only info logs from the Unity console",
+                description: "Retrieve only info logs from Unity console (newest first). Use smaller limits like ?limit=25 to prevent token overflow in LLM responses.",
                 mimeType: resourceMimeType
             }
         ]
@@ -43,7 +43,7 @@ function listLogTypes(resourceMimeType) {
 export function registerGetConsoleLogsResource(server, mcpUnity, logger) {
     logger.info(`Registering resource: ${resourceName}`);
     server.resource(resourceName, resourceTemplate, {
-        description: 'Retrieve Unity console logs by type',
+        description: 'Retrieve Unity console logs by type (newest first). IMPORTANT: Use pagination parameters ?offset=0&limit=50 to avoid LLM token limits. Default limit=100 may exceed context window.',
         mimeType: resourceMimeType
     }, async (uri, variables) => {
         try {
@@ -63,11 +63,16 @@ async function resourceHandler(mcpUnity, uri, variables, logger) {
     let logType = variables["logType"] ? decodeURIComponent(variables["logType"]) : undefined;
     if (logType === '')
         logType = undefined;
+    // Extract pagination parameters
+    const offset = variables["offset"] ? parseInt(variables["offset"], 10) : 0;
+    const limit = variables["limit"] ? parseInt(variables["limit"], 10) : 100;
     // Send request to Unity
     const response = await mcpUnity.sendRequest({
         method: resourceName,
         params: {
-            logType: logType
+            logType: logType,
+            offset: offset,
+            limit: limit
         }
     });
     if (!response.success) {
@@ -75,7 +80,7 @@ async function resourceHandler(mcpUnity, uri, variables, logger) {
     }
     return {
         contents: [{
-                uri: `unity://logs/${logType ?? ''}`,
+                uri: `unity://logs/${logType ?? ''}?offset=${offset}&limit=${limit}`,
                 mimeType: resourceMimeType,
                 text: JSON.stringify(response, null, 2)
             }]
