@@ -17,27 +17,27 @@ function listLogTypes(resourceMimeType: string) {
   return {
     resources: [
       {
-        uri: `unity://logs/`,
+        uri: `unity://logs/?offset=0&limit=50`,
         name: "All logs",
-        description: "Retrieve Unity console logs (newest first). Use pagination to avoid token limits: ?offset=0&limit=50 for recent logs. Default limit=100 may be too large for LLM context.",
+        description: "Retrieve Unity console logs (newest first). Default pagination offset=0&limit=50 to avoid token limits.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/error`,
+        uri: `unity://logs/error?offset=0&limit=20`,
         name: "Error logs",
-        description: "Retrieve only error logs from Unity console (newest first). Use ?offset=0&limit=20 to avoid token limits. Large log sets may exceed LLM context window.",
+        description: "Retrieve only error logs from Unity console (newest first). Default pagination offset=0&limit=20.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/warning`,
+        uri: `unity://logs/warning?offset=0&limit=30`,
         name: "Warning logs", 
-        description: "Retrieve only warning logs from Unity console (newest first). Use pagination ?offset=0&limit=30 to manage token usage effectively.",
+        description: "Retrieve only warning logs from Unity console (newest first). Default pagination offset=0&limit=30.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/info`,
+        uri: `unity://logs/info?offset=0&limit=25`,
         name: "Info logs",
-        description: "Retrieve only info logs from Unity console (newest first). Use smaller limits like ?limit=25 to prevent token overflow in LLM responses.",
+        description: "Retrieve only info logs from Unity console (newest first). Default pagination offset=0&limit=25.",
         mimeType: resourceMimeType
       }
     ]
@@ -76,9 +76,17 @@ async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variable
   let logType = variables["logType"] ? decodeURIComponent(variables["logType"] as string) : undefined;
   if (logType === '') logType = undefined;
   
-  // Extract pagination parameters
+  // Extract pagination parameters with validation
   const offset = variables["offset"] ? parseInt(variables["offset"] as string, 10) : 0;
   const limit = variables["limit"] ? parseInt(variables["limit"] as string, 10) : 100;
+  
+  // Validate pagination parameters
+  if (isNaN(offset) || offset < 0) {
+    throw new McpUnityError(ErrorType.VALIDATION, 'Invalid offset parameter: must be a non-negative integer');
+  }
+  if (isNaN(limit) || limit <= 0) {
+    throw new McpUnityError(ErrorType.VALIDATION, 'Invalid limit parameter: must be a positive integer');
+  }
 
   // Send request to Unity
   const response = await mcpUnity.sendRequest({

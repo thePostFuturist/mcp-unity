@@ -11,13 +11,6 @@ namespace McpUnity.Services
     public interface IConsoleLogsService
     {
         /// <summary>
-        /// Get all logs as a JSON array, optionally filtered by log type
-        /// </summary>
-        /// <param name="logType">UnityEngine.LogType as string (e.g. "Error", "Warning", "Log"). Empty string for all logs.</param>
-        /// <returns>JArray containing filtered logs</returns>
-        JArray GetAllLogsAsJson(string logType = "");
-        
-        /// <summary>
         /// Get logs as a JSON object with pagination support
         /// </summary>
         /// <param name="logType">Filter by log type (empty for all)</param>

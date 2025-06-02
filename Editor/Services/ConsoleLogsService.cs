@@ -77,17 +77,6 @@ namespace McpUnity.Services
             EditorApplication.update -= CheckConsoleClearViaReflection;
 #endif
         }
-        
-        /// <summary>
-        /// Get all logs as a JSON array
-        /// </summary>
-        /// <returns>JArray containing all logs</returns>
-        public JArray GetAllLogsAsJson(string logType = "")
-        {
-            var result = GetLogsAsJson(logType, 0, int.MaxValue);
-            return result["logs"] as JArray;
-        }
-        
         /// <summary>
         /// Get logs as a JSON array with pagination support
         /// </summary>
@@ -121,23 +110,21 @@ namespace McpUnity.Services
             
             lock (_logEntries)
             {
-                // First pass: count total and filtered entries
-                foreach (var entry in _logEntries)
-                {
-                    totalCount++;
-                    if (!filter || unityLogTypes.Contains(entry.Type.ToString()))
-                    {
-                        filteredCount++;
-                    }
-                }
+                totalCount = _logEntries.Count;
                 
-                // Second pass: collect the requested page (newest first)
+                // Single pass: count filtered entries and collect the requested page (newest first)
                 for (int i = _logEntries.Count - 1; i >= 0; i--)
                 {
                     var entry = _logEntries[i];
+                    
+                    // Skip if filtering and entry doesn't match the filter
                     if (filter && !unityLogTypes.Contains(entry.Type.ToString()))
                         continue;
-                        
+                    
+                    // Count filtered entries
+                    filteredCount++;
+                    
+                    // Check if we're in the offset range and haven't reached the limit yet
                     if (currentIndex >= offset && logsArray.Count < limit)
                     {
                         logsArray.Add(new JObject
@@ -150,22 +137,18 @@ namespace McpUnity.Services
                     }
                     
                     currentIndex++;
-                    if (logsArray.Count >= limit) break;
+                    
+                    // Early exit if we've collected enough logs
+                    if (currentIndex >= offset + limit) break;
                 }
             }
             
             return new JObject
             {
                 ["logs"] = logsArray,
-                ["pagination"] = new JObject
-                {
-                    ["offset"] = offset,
-                    ["limit"] = limit,
-                    ["totalCount"] = totalCount,
-                    ["filteredCount"] = filteredCount,
-                    ["returnedCount"] = logsArray.Count,
-                    ["hasMore"] = offset + logsArray.Count < filteredCount
-                }
+                ["_totalCount"] = totalCount,
+                ["_filteredCount"] = filteredCount,
+                ["_returnedCount"] = logsArray.Count
             };
         }
         

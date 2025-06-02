@@ -1,3 +1,4 @@
+using System;
 using Newtonsoft.Json.Linq;
 using McpUnity.Services;
 
@@ -35,14 +36,19 @@ namespace McpUnity.Resources
             // Use the new paginated method
             JObject result = _consoleLogsService.GetLogsAsJson(logType, offset, limit);
             
-            // Add success info to the response
+            // Add formatted message with pagination info
+            string typeFilter = logType != null ? $" of type '{logType}'" : "";
+            int returnedCount = result["_returnedCount"]?.Value<int>() ?? 0;
+            int filteredCount = result["_filteredCount"]?.Value<int>() ?? 0;
+            int totalCount = result["_totalCount"]?.Value<int>() ?? 0;
+            
+            result["message"] = $"Retrieved {returnedCount} of {filteredCount} log entries{typeFilter} (offset: {offset}, limit: {limit}, total: {totalCount})";
             result["success"] = true;
             
-            var pagination = result["pagination"] as JObject;
-            string typeFilter = logType != null ? $" of type '{logType}'" : "";
-            int returnedCount = pagination?["returnedCount"]?.Value<int>() ?? 0;
-            int filteredCount = pagination?["filteredCount"]?.Value<int>() ?? 0;
-            result["message"] = $"Retrieved {returnedCount} of {filteredCount} log entries{typeFilter} (offset: {offset}, limit: {limit})";
+            // Remove internal count fields (they're now in the message)
+            result.Remove("_totalCount");
+            result.Remove("_filteredCount");
+            result.Remove("_returnedCount");
 
             return result;
         }
