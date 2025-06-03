@@ -16,8 +16,9 @@ namespace McpUnity.Services
         /// <param name="logType">Filter by log type (empty for all)</param>
         /// <param name="offset">Starting index (0-based)</param>
         /// <param name="limit">Maximum number of logs to return (default: 100)</param>
+        /// <param name="includeStackTrace">Whether to include stack trace in logs (default: true)</param>
         /// <returns>JObject containing logs array and pagination info</returns>
-        JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100);
+        JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100, bool includeStackTrace = true);
         
         /// <summary>
         /// Start listening for logs
