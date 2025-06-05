@@ -27,7 +27,11 @@ const paramsSchema = z.object({
     .min(1)
     .max(500)
     .optional()
-    .describe("Maximum number of logs to return (defaults to 50, max 500 to avoid token limits)")
+    .describe("Maximum number of logs to return (defaults to 50, max 500 to avoid token limits)"),
+  includeStackTrace: z
+    .boolean()
+    .optional()
+    .describe("Whether to include stack trace in logs. ⚠️ ALWAYS SET TO FALSE to save 80-90% tokens, unless you specifically need stack traces for debugging. Default: true (except info logs in resource)")
 });
 
 /**
@@ -76,7 +80,7 @@ async function toolHandler(
   mcpUnity: McpUnity,
   params: z.infer<typeof paramsSchema>
 ): Promise<CallToolResult> {
-  const { logType, offset = 0, limit = 50 } = params;
+  const { logType, offset = 0, limit = 50, includeStackTrace = true } = params;
 
   // Send request to Unity using the same method name as the resource
   // This allows reusing the existing Unity-side implementation
@@ -86,6 +90,7 @@ async function toolHandler(
       logType: logType,
       offset: offset,
       limit: limit,
+      includeStackTrace: includeStackTrace,
     },
   });
 

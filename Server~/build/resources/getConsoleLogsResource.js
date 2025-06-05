@@ -3,7 +3,7 @@ import { McpUnityError, ErrorType } from '../utils/errors.js';
 // Constants for the resource
 const resourceName = 'get_console_logs';
 const resourceMimeType = 'application/json';
-const resourceUri = 'unity://logs/{logType}?offset={offset}&limit={limit}';
+const resourceUri = 'unity://logs/{logType}?offset={offset}&limit={limit}&includeStackTrace={includeStackTrace}';
 const resourceTemplate = new ResourceTemplate(resourceUri, {
     list: () => listLogTypes(resourceMimeType)
 });
@@ -11,27 +11,27 @@ function listLogTypes(resourceMimeType) {
     return {
         resources: [
             {
-                uri: `unity://logs/`,
+                uri: `unity://logs/?offset=0&limit=50&includeStackTrace=true`,
                 name: "All logs",
-                description: "Retrieve Unity console logs (newest first). Use pagination to avoid token limits: ?offset=0&limit=50 for recent logs. Default limit=100 may be too large for LLM context.",
+                description: "All Unity console logs (newest first). ⚠️ Set includeStackTrace=false to save 80-90% tokens. Use limit=50 to avoid token limits.",
                 mimeType: resourceMimeType
             },
             {
-                uri: `unity://logs/error`,
+                uri: `unity://logs/error?offset=0&limit=20&includeStackTrace=true`,
                 name: "Error logs",
-                description: "Retrieve only error logs from Unity console (newest first). Use ?offset=0&limit=20 to avoid token limits. Large log sets may exceed LLM context window.",
+                description: "Error logs only. ⚠️ Start with includeStackTrace=false for quick overview, then true only if debugging specific errors.",
                 mimeType: resourceMimeType
             },
             {
-                uri: `unity://logs/warning`,
+                uri: `unity://logs/warning?offset=0&limit=30&includeStackTrace=true`,
                 name: "Warning logs",
-                description: "Retrieve only warning logs from Unity console (newest first). Use pagination ?offset=0&limit=30 to manage token usage effectively.",
+                description: "Warning logs only. ⚠️ Use includeStackTrace=false by default to save tokens.",
                 mimeType: resourceMimeType
             },
             {
-                uri: `unity://logs/info`,
+                uri: `unity://logs/info?offset=0&limit=25&includeStackTrace=false`,
                 name: "Info logs",
-                description: "Retrieve only info logs from Unity console (newest first). Use smaller limits like ?limit=25 to prevent token overflow in LLM responses.",
+                description: "Info logs only. Stack traces excluded by default to minimize tokens.",
                 mimeType: resourceMimeType
             }
         ]
@@ -43,7 +43,7 @@ function listLogTypes(resourceMimeType) {
 export function registerGetConsoleLogsResource(server, mcpUnity, logger) {
     logger.info(`Registering resource: ${resourceName}`);
     server.resource(resourceName, resourceTemplate, {
-        description: 'Retrieve Unity console logs by type (newest first). IMPORTANT: Use pagination parameters ?offset=0&limit=50 to avoid LLM token limits. Default limit=100 may exceed context window.',
+        description: 'Retrieve Unity console logs by type with pagination support. See individual log type descriptions for optimal settings.',
         mimeType: resourceMimeType
     }, async (uri, variables) => {
         try {
@@ -63,16 +63,30 @@ async function resourceHandler(mcpUnity, uri, variables, logger) {
     let logType = variables["logType"] ? decodeURIComponent(variables["logType"]) : undefined;
     if (logType === '')
         logType = undefined;
-    // Extract pagination parameters
+    // Extract pagination parameters with validation
     const offset = variables["offset"] ? parseInt(variables["offset"], 10) : 0;
     const limit = variables["limit"] ? parseInt(variables["limit"], 10) : 100;
+    // Extract includeStackTrace parameter
+    let includeStackTrace = true; // Default to true for backward compatibility
+    if (variables["includeStackTrace"] !== undefined) {
+        const value = variables["includeStackTrace"];
+        includeStackTrace = value === 'true' || value === '1' || value === 'yes';
+    }
+    // Validate pagination parameters
+    if (isNaN(offset) || offset < 0) {
+        throw new McpUnityError(ErrorType.VALIDATION, 'Invalid offset parameter: must be a non-negative integer');
+    }
+    if (isNaN(limit) || limit <= 0) {
+        throw new McpUnityError(ErrorType.VALIDATION, 'Invalid limit parameter: must be a positive integer');
+    }
     // Send request to Unity
     const response = await mcpUnity.sendRequest({
         method: resourceName,
         params: {
             logType: logType,
             offset: offset,
-            limit: limit
+            limit: limit,
+            includeStackTrace: includeStackTrace
         }
     });
     if (!response.success) {
@@ -80,7 +94,7 @@ async function resourceHandler(mcpUnity, uri, variables, logger) {
     }
     return {
         contents: [{
-                uri: `unity://logs/${logType ?? ''}?offset=${offset}&limit=${limit}`,
+                uri: `unity://logs/${logType ?? ''}?offset=${offset}&limit=${limit}&includeStackTrace=${includeStackTrace}`,
                 mimeType: resourceMimeType,
                 text: JSON.stringify(response, null, 2)
             }]

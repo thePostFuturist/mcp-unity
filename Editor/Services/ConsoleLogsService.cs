@@ -83,8 +83,9 @@ namespace McpUnity.Services
         /// <param name="logType">Filter by log type (empty for all)</param>
         /// <param name="offset">Starting index (0-based)</param>
         /// <param name="limit">Maximum number of logs to return (default: 100)</param>
+        /// <param name="includeStackTrace">Whether to include stack trace in logs (default: true)</param>
         /// <returns>JObject containing logs array and pagination info</returns>
-        public JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100)
+        public JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100, bool includeStackTrace = true)
         {
             // Convert log entries to a JSON array, filtering by logType if provided
             JArray logsArray = new JArray();
@@ -127,13 +128,20 @@ namespace McpUnity.Services
                     // Check if we're in the offset range and haven't reached the limit yet
                     if (currentIndex >= offset && logsArray.Count < limit)
                     {
-                        logsArray.Add(new JObject
+                        var logObject = new JObject
                         {
                             ["message"] = entry.Message,
-                            ["stackTrace"] = entry.StackTrace,
                             ["type"] = entry.Type.ToString(),
                             ["timestamp"] = entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")
-                        });
+                        };
+                        
+                        // Only include stack trace if requested
+                        if (includeStackTrace)
+                        {
+                            logObject["stackTrace"] = entry.StackTrace;
+                        }
+                        
+                        logsArray.Add(logObject);
                     }
                     
                     currentIndex++;

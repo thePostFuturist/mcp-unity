@@ -8,7 +8,7 @@ import { Variables } from '@modelcontextprotocol/sdk/shared/uriTemplate.js';
 // Constants for the resource
 const resourceName = 'get_console_logs';
 const resourceMimeType = 'application/json';
-const resourceUri = 'unity://logs/{logType}?offset={offset}&limit={limit}';
+const resourceUri = 'unity://logs/{logType}?offset={offset}&limit={limit}&includeStackTrace={includeStackTrace}';
 const resourceTemplate = new ResourceTemplate(resourceUri, {
   list: () => listLogTypes(resourceMimeType)
 });
@@ -17,27 +17,27 @@ function listLogTypes(resourceMimeType: string) {
   return {
     resources: [
       {
-        uri: `unity://logs/?offset=0&limit=50`,
+        uri: `unity://logs/?offset=0&limit=50&includeStackTrace=true`,
         name: "All logs",
-        description: "Retrieve Unity console logs (newest first). Default pagination offset=0&limit=50 to avoid token limits.",
+        description: "All Unity console logs (newest first). ⚠️ Set includeStackTrace=false to save 80-90% tokens. Use limit=50 to avoid token limits.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/error?offset=0&limit=20`,
+        uri: `unity://logs/error?offset=0&limit=20&includeStackTrace=true`,
         name: "Error logs",
-        description: "Retrieve only error logs from Unity console (newest first). Default pagination offset=0&limit=20.",
+        description: "Error logs only. ⚠️ Start with includeStackTrace=false for quick overview, then true only if debugging specific errors.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/warning?offset=0&limit=30`,
+        uri: `unity://logs/warning?offset=0&limit=30&includeStackTrace=true`,
         name: "Warning logs", 
-        description: "Retrieve only warning logs from Unity console (newest first). Default pagination offset=0&limit=30.",
+        description: "Warning logs only. ⚠️ Use includeStackTrace=false by default to save tokens.",
         mimeType: resourceMimeType
       },
       {
-        uri: `unity://logs/info?offset=0&limit=25`,
+        uri: `unity://logs/info?offset=0&limit=25&includeStackTrace=false`,
         name: "Info logs",
-        description: "Retrieve only info logs from Unity console (newest first). Default pagination offset=0&limit=25.",
+        description: "Info logs only. Stack traces excluded by default to minimize tokens.",
         mimeType: resourceMimeType
       }
     ]
@@ -54,7 +54,7 @@ export function registerGetConsoleLogsResource(server: McpServer, mcpUnity: McpU
     resourceName,
     resourceTemplate,
     {
-      description: 'Retrieve Unity console logs by type (newest first). IMPORTANT: Use pagination parameters ?offset=0&limit=50 to avoid LLM token limits. Default limit=100 may exceed context window.',
+      description: 'Retrieve Unity console logs by type with pagination support. See individual log type descriptions for optimal settings.',
       mimeType: resourceMimeType
     },
     async (uri, variables) => {
@@ -80,6 +80,13 @@ async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variable
   const offset = variables["offset"] ? parseInt(variables["offset"] as string, 10) : 0;
   const limit = variables["limit"] ? parseInt(variables["limit"] as string, 10) : 100;
   
+  // Extract includeStackTrace parameter
+  let includeStackTrace = true; // Default to true for backward compatibility
+  if (variables["includeStackTrace"] !== undefined) {
+    const value = variables["includeStackTrace"] as string;
+    includeStackTrace = value === 'true' || value === '1' || value === 'yes';
+  }
+  
   // Validate pagination parameters
   if (isNaN(offset) || offset < 0) {
     throw new McpUnityError(ErrorType.VALIDATION, 'Invalid offset parameter: must be a non-negative integer');
@@ -94,7 +101,8 @@ async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variable
     params: {
       logType: logType,
       offset: offset,
-      limit: limit
+      limit: limit,
+      includeStackTrace: includeStackTrace
     }
   });
 
@@ -107,7 +115,7 @@ async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variable
 
   return {
     contents: [{
-      uri: `unity://logs/${logType ?? ''}?offset=${offset}&limit=${limit}`,
+      uri: `unity://logs/${logType ?? ''}?offset=${offset}&limit=${limit}&includeStackTrace=${includeStackTrace}`,
       mimeType: resourceMimeType,
       text: JSON.stringify(response, null, 2)
     }]
