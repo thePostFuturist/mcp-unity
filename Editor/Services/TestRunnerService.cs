@@ -180,6 +180,7 @@ namespace McpUnity.Services
             
             var summary = BuildResultJson(_results, result);
             _tcs?.TrySetResult(summary);
+            _tcs = null;
         }
 
         #endregion
