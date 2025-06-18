@@ -145,6 +145,9 @@ namespace McpUnity.Services
         /// </summary>
         public void RunStarted(ITestAdaptor testsToRun)
         {
+            if (_tcs == null)
+                return;
+            
             McpLogger.LogInfo($"Test run started: {testsToRun?.Name}");
         }
 
@@ -161,6 +164,9 @@ namespace McpUnity.Services
         /// </summary>
         public void TestFinished(ITestResultAdaptor result)
         {
+            if (_tcs == null)
+                return;
+            
             _results.Add(result);
         }
 
@@ -169,8 +175,12 @@ namespace McpUnity.Services
         /// </summary>
         public void RunFinished(ITestResultAdaptor result)
         {
+            if (_tcs == null)
+                return;
+            
             var summary = BuildResultJson(_results, result);
             _tcs?.TrySetResult(summary);
+            _tcs = null;
         }
 
         #endregion
