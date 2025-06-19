@@ -158,7 +158,8 @@ namespace McpUnity.Services
         /// </summary>
         public void TestFinished(ITestResultAdaptor result)
         {
-            _results.Add(result);
+            if (result != null)  // Add null check
+                _results.Add(result);
         }
 
         /// <summary>
@@ -194,6 +195,8 @@ namespace McpUnity.Services
             int pass = results.Count(r => r.ResultState == "Passed");
             int fail = results.Count(r => r.ResultState == "Failed");
             int skip = results.Count(r => r.ResultState == "Skipped");
+            string state = result != null ? result.ResultState : "Unknown";
+            double duration = result != null ? result.Duration : -1;
 
             var arr = new JArray(results
                 .Where(r => !_returnOnlyFailures || r.ResultState == "Failed")
@@ -209,8 +212,8 @@ namespace McpUnity.Services
                 ["success"]           = true,
                 ["type"]              = "text",
                 ["message"]           = $"{result.Test.Name} test run completed: {pass}/{results.Count} passed - {fail}/{results.Count} failed - {skip}/{results.Count} skipped",
-                ["resultState"]       = result.ResultState,
-                ["durationSeconds"]   = result.Duration,
+                ["resultState"]       = state,
+                ["durationSeconds"]   = duration,
                 ["testCount"]         = results.Count,
                 ["passCount"]         = pass,
                 ["failCount"]         = fail,
