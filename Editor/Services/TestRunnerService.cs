@@ -30,18 +30,8 @@ namespace McpUnity.Services
         public TestRunnerService()
         {
             _testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
-            
+            _results = new List<ITestResultAdaptor>();
             _testRunnerApi.RegisterCallbacks(this);
-        }
-
-        [MenuItem("Tools/MCP Unity/Debug call path")]
-        public static async void DebugCallGetAllTests()
-        {
-            var service = new TestRunnerService();
-            var tests = await service.GetAllTestsAsync();
-            Debug.Log($"Retrieved {tests.Count} tests:");
-            foreach (var t in tests)
-                Debug.Log($"Test: {t.FullName} ({t.TestMode}) - State: {t.RunState}");
         }
 
         /// <summary>
@@ -83,11 +73,11 @@ namespace McpUnity.Services
         /// <returns>Task that resolves with test results when tests are complete</returns>
         public async Task<JObject> ExecuteTestsAsync(TestMode testMode, bool returnOnlyFailures, bool returnWithLogs, string testFilter = "")
         {
+            var filter = new Filter { testMode = testMode };
+
             _tcs = new TaskCompletionSource<JObject>();
-            _results = new List<ITestResultAdaptor>();
             _returnOnlyFailures = returnOnlyFailures;
             _returnWithLogs = returnWithLogs;
-            var filter = new Filter { testMode = testMode };
 
             if (!string.IsNullOrEmpty(testFilter))
             {
@@ -148,6 +138,7 @@ namespace McpUnity.Services
             if (_tcs == null)
                 return;
             
+            _results.Clear();
             McpLogger.LogInfo($"Test run started: {testsToRun?.Name}");
         }
 
