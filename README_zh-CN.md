@@ -244,6 +244,18 @@ MCP Unity 通过将 Unity `Library/PackedCache` 文件夹添加到您的工作�
 > [!TIP]  
 > 您的 AI 编码 IDE（例如 Claude Desktop、Cursor IDE、Windsurf IDE）与 MCP 服务器之间的超时时间取决于 IDE。
 
+## 可选：允许远程 MCP Bridge 连接
+
+默认情况下，WebSocket 服务器绑定到 'localhost'。要允许来自其他设备的 MCP Bridge 连接，请执行以下步骤：
+
+1. 打开 Unity 编辑器  
+2. 依次点击菜单「Tools > MCP Unity > Server Window」  
+3. 勾选"Allow Remote Connections（允许远程连接）"复选框  
+4. Unity 将 WebSocket 服务器绑定到 '0.0.0.0'（所有网络接口）  
+5. 重新启动 Node.js 服务器以应用新的主机配置  
+6. 在远程运行 MCP Bridge 时，将环境变量 UNITY_HOST 设置为 Unity 所在机器的 IP 地址：  
+   `UNITY_HOST=192.168.1.100 node server.js`
+
 ## <a name="debug-server"></a>调试服务器
 
 <details>
