@@ -125,10 +125,11 @@ namespace McpUnity.Unity
 
             try
             {
-                _webSocketServer = new WebSocketServer($"ws://localhost:{McpUnitySettings.Instance.Port}");
+                var host = McpUnitySettings.Instance.AllowRemoteConnections ? "0.0.0.0" : "localhost";
+                _webSocketServer = new WebSocketServer($"ws://{host}:{McpUnitySettings.Instance.Port}");
                 _webSocketServer.AddWebSocketService("/McpUnity", () => new McpUnitySocketHandler(this));
                 _webSocketServer.Start();
-                McpLogger.LogInfo($"WebSocket server started successfully on port {McpUnitySettings.Instance.Port}.");
+                McpLogger.LogInfo($"WebSocket server started successfully on {host}:{McpUnitySettings.Instance.Port}.");
             }
             catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
             {
