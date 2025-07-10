@@ -175,7 +175,7 @@ namespace McpUnity.Unity
                 mcpUnityServer.StopServer();
             }
             
-            Repaint();
+            //Repaint();
             
             GUI.enabled = true;
             EditorGUILayout.EndHorizontal();
