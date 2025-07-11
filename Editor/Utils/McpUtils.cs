@@ -150,6 +150,24 @@ namespace McpUnity.Utils
             string configFilePath = GetCursorConfigPath();
             return AddToConfigFile(configFilePath, useTabsIndentation, "Cursor");
         }
+        
+        /// <summary>
+        /// Adds the MCP configuration to the Claude Code config file
+        /// </summary>
+        public static bool AddToClaudeCodeConfig(bool useTabsIndentation)
+        {
+            string configFilePath = GetClaudeCodeConfigPath();
+            return AddToConfigFile(configFilePath, useTabsIndentation, "Claude Code");
+        }
+
+        /// <summary>
+        /// Adds the MCP configuration to the GitHub Copilot config file
+        /// </summary>
+        public static bool AddToGitHubCopilotConfig(bool useTabsIndentation)
+        {
+            string configFilePath = GetGitHubCopilotConfigPath();
+            return AddToConfigFile(configFilePath, useTabsIndentation, "GitHub Copilot");
+        }
 
         /// <summary>
         /// Common method to add MCP configuration to a specified config file
@@ -281,9 +299,7 @@ namespace McpUnity.Utils
             // Return the path to the claude_desktop_config.json file
             return Path.Combine(basePath, "claude_desktop_config.json");
         }
-        
-        
-        
+
         /// <summary>
         /// Gets the path to the Cursor config file based on the current OS
         /// </summary>
@@ -313,6 +329,44 @@ namespace McpUnity.Utils
             
             // Return the path to the mcp_config.json file
             return Path.Combine(basePath, "mcp.json");
+        }
+
+        /// <summary>
+        /// Gets the path to the Claude Code config file based on the current OS
+        /// </summary>
+        /// <returns>The path to the Claude Code config file</returns>
+        private static string GetClaudeCodeConfigPath()
+        {
+            string basePath;
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                // Windows: %USERPROFILE%\.claude-code\mcp.json
+                basePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude-code");
+            }
+            else if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                // macOS: ~/.claude-code/mcp.json
+                string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                basePath = Path.Combine(homeDir, ".claude-code");
+            }
+            else
+            {
+                Debug.LogError("Unsupported platform for Claude Code MCP config");
+                return null;
+            }
+            return Path.Combine(basePath, "mcp.json");
+        }
+
+        /// <summary>
+        /// Gets the path to the GitHub Copilot config file (workspace .vscode/mcp.json)
+        /// </summary>
+        /// <returns>The path to the GitHub Copilot config file</returns>
+        private static string GetGitHubCopilotConfigPath()
+        {
+            // Default to current Unity project root/.vscode/mcp.json
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            string vscodeDir = Path.Combine(projectRoot, ".vscode");
+            return Path.Combine(vscodeDir, "mcp.json");
         }
 
         /// <summary>
