@@ -1,3 +1,4 @@
+using System;
 using McpUnity.Utils;
 using UnityEngine;
 using UnityEditor;
@@ -22,6 +23,7 @@ namespace McpUnity.Unity
         private string _mcpConfigJson = "";
         private bool _tabsIndentationJson = false;
         private Vector2 _helpTabScrollPosition = Vector2.zero;
+        private Vector2 _serverTabScrollPosition = Vector2.zero;
 
         [MenuItem("Tools/MCP Unity/Server Window", false, 1)]
         public static void ShowWindow()
@@ -54,7 +56,7 @@ namespace McpUnity.Unity
                     DrawHelpTab();
                     break;
             }
-            
+
             // Version info at the bottom
             GUILayout.FlexibleSpace();
             WrappedLabel($"MCP Unity v{McpUnitySettings.ServerVersion}", EditorStyles.miniLabel, GUILayout.Width(150));
@@ -66,6 +68,7 @@ namespace McpUnity.Unity
 
         private void DrawServerTab()
         {
+            _serverTabScrollPosition = EditorGUILayout.BeginScrollView(_serverTabScrollPosition);
             EditorGUILayout.BeginVertical("box");
             
             // Server status
@@ -133,6 +136,19 @@ namespace McpUnity.Unity
             
             EditorGUILayout.Space();
             
+            // Allow remote connections toggle
+            bool allowRemoteConnections = EditorGUILayout.Toggle(new GUIContent("Allow Remote Connections", "Allow connections from remote MCP bridges. When disabled, only localhost connections are allowed (default)."), settings.AllowRemoteConnections);
+            if (allowRemoteConnections != settings.AllowRemoteConnections)
+            {
+                settings.AllowRemoteConnections = allowRemoteConnections;
+                settings.SaveSettings();
+                // Restart server to apply binding change
+                mcpUnityServer.StopServer();
+                mcpUnityServer.StartServer();
+            }
+            
+            EditorGUILayout.Space();
+            
             // Enable info logs toggle
             bool enableInfoLogs = EditorGUILayout.Toggle(new GUIContent("Enable Info Logs", "Show informational logs in the Unity console"), settings.EnableInfoLogs);
             if (enableInfoLogs != settings.EnableInfoLogs)
@@ -142,7 +158,7 @@ namespace McpUnity.Unity
             }
             
             EditorGUILayout.Space();
-            
+
             // Server control buttons
             EditorGUILayout.BeginHorizontal();
             
@@ -160,7 +176,7 @@ namespace McpUnity.Unity
                 mcpUnityServer.StopServer();
             }
             
-            Repaint();
+            //Repaint();
             
             GUI.enabled = true;
             EditorGUILayout.EndHorizontal();
@@ -200,6 +216,16 @@ namespace McpUnity.Unity
             }
                 
             EditorGUILayout.EndVertical();
+
+            // NPM Executable Path
+            string newNpmPath = EditorGUILayout.TextField(new GUIContent("NPM Executable Path", "Optional: Full path to the npm executable (e.g., /Users/user/.asdf/shims/npm or C:\\path\\to\\npm.cmd). If not set, 'npm' from the system PATH will be used."), settings.NpmExecutablePath);
+            if (newNpmPath != settings.NpmExecutablePath)
+            {
+                settings.NpmExecutablePath = newNpmPath;
+                settings.SaveSettings();
+            }
+            
+            EditorGUILayout.Space();
             
             // MCP Config generation section
             EditorGUILayout.Space();
@@ -222,58 +248,38 @@ namespace McpUnity.Unity
 
             EditorGUILayout.Space();
             
-            if (GUILayout.Button("Configure Windsurf IDE", GUILayout.Height(30)))
-            {
-                bool added = McpUtils.AddToWindsurfIdeConfig(_tabsIndentationJson);
-                if (added)
-                {
-                    EditorUtility.DisplayDialog("Success", "The MCP configuration was successfully added to the Windsurf config file.", "OK");
-                }
-                else
-                {
-                    EditorUtility.DisplayDialog("Error", "The MCP configuration could not be added to the Windsurf config file.", "OK");
-                }
-            }
+            ShowConfigButton("Windsurf", McpUtils.AddToWindsurfIdeConfig);
             
             EditorGUILayout.Space();
             
-            if (GUILayout.Button("Configure Claude Desktop", GUILayout.Height(30)))
-            {
-                bool added = McpUtils.AddToClaudeDesktopConfig(_tabsIndentationJson);
-                if (added)
-                {
-                    EditorUtility.DisplayDialog("Success", "The MCP configuration was successfully added to the Claude Desktop config file.", "OK");
-                }
-                else
-                {
-                    EditorUtility.DisplayDialog("Error", "The MCP configuration could not be added to the Claude Desktop config file.", "OK");
-                }
-            }
+            ShowConfigButton("Claude Desktop", McpUtils.AddToClaudeDesktopConfig);
             
             EditorGUILayout.Space();
             
-            if (GUILayout.Button("Configure Cursor", GUILayout.Height(30)))
-            {
-                bool added = McpUtils.AddToCursorConfig(_tabsIndentationJson);
-                if (added)
-                {
-                    EditorUtility.DisplayDialog("Success", "The MCP configuration was successfully added to the Cursor config file.", "OK");
-                }
-                else
-                {
-                    EditorUtility.DisplayDialog("Error", "The MCP configuration could not be added to the Cursor Desktop config file.", "OK");
-                }
-            }
-            
-            EditorGUILayout.EndVertical();
-            
+            ShowConfigButton("Cursor", McpUtils.AddToCursorConfig);
+
+            EditorGUILayout.Space();
+
+            ShowConfigButton("Claude Code", McpUtils.AddToClaudeCodeConfig);
+
+            EditorGUILayout.Space();
+
+            ShowConfigButton("GitHub Copilot", McpUtils.AddToGitHubCopilotConfig);
+
+            EditorGUILayout.Separator();
+            EditorGUILayout.Separator();
+
             EditorGUILayout.Space(); 
 
             // Force Install Server button
             if (GUILayout.Button("Force Install Server", GUILayout.Height(30)))
             {
                 McpUnityServer.Instance.InstallServer();
+                McpLogger.LogInfo("MCP Unity Server installed successfully.");
             }
+            
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndScrollView();
         }
         
         private void DrawHelpTab()
@@ -588,6 +594,26 @@ namespace McpUnity.Unity
             
             EditorGUILayout.LabelField(text, wrappedStyle, options);
         }
+
+        
+            
+        // Helper to show a config button with unified logic
+        private void ShowConfigButton(string configLabel, Func<bool, bool> configAction)
+        {
+            if (GUILayout.Button($"Configure {configLabel}", GUILayout.Height(30)))
+            {
+                bool added = configAction(_tabsIndentationJson);
+                if (added)
+                {
+                    EditorUtility.DisplayDialog("Success", $"The MCP configuration was successfully added to the {configLabel} config file.", "OK");
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("Error", $"The MCP configuration could not be added to the {configLabel} config file.", "OK");
+                }
+            }
+        }
+
         
         #endregion
     }

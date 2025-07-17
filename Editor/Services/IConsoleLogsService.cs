@@ -11,11 +11,14 @@ namespace McpUnity.Services
     public interface IConsoleLogsService
     {
         /// <summary>
-        /// Get all logs as a JSON array, optionally filtered by log type
+        /// Get logs as a JSON object with pagination support
         /// </summary>
-        /// <param name="logType">UnityEngine.LogType as string (e.g. "Error", "Warning", "Log"). Empty string for all logs.</param>
-        /// <returns>JArray containing filtered logs</returns>
-        JArray GetAllLogsAsJson(string logType = "");
+        /// <param name="logType">Filter by log type (empty for all)</param>
+        /// <param name="offset">Starting index (0-based)</param>
+        /// <param name="limit">Maximum number of logs to return (default: 100)</param>
+        /// <param name="includeStackTrace">Whether to include stack trace in logs (default: true)</param>
+        /// <returns>JObject containing logs array and pagination info</returns>
+        JObject GetLogsAsJson(string logType = "", int offset = 0, int limit = 100, bool includeStackTrace = true);
         
         /// <summary>
         /// Start listening for logs
@@ -26,5 +29,17 @@ namespace McpUnity.Services
         /// Stop listening for logs
         /// </summary>
         void StopListening();
+        
+        /// <summary>
+        /// Manually clean up old log entries, keeping only the most recent ones
+        /// </summary>
+        /// <param name="keepCount">Number of recent entries to keep (default: 500)</param>
+        void CleanupOldLogs(int keepCount = 500);
+        
+        /// <summary>
+        /// Get current log count
+        /// </summary>
+        /// <returns>Number of stored log entries</returns>
+        int GetLogCount();
     }
 }

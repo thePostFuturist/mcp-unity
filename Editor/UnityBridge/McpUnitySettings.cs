@@ -13,12 +13,11 @@ namespace McpUnity.Unity
     public class McpUnitySettings
     {
         // Constants
-        public const string ServerVersion = "1.0.0";
+        public const string ServerVersion = "1.1.2";
         public const string PackageName = "com.gamelovers.mcp-unity";
         public const int RequestTimeoutMinimum = 10;
-
-        private const string EnvUnityPort = "UNITY_PORT";
-        private const string EnvUnityRequestTimeout = "UNITY_REQUEST_TIMEOUT";
+        
+        // Paths
         private const string SettingsPath = "ProjectSettings/McpUnitySettings.json";
         
         private static McpUnitySettings _instance;
@@ -34,6 +33,12 @@ namespace McpUnity.Unity
         
         [Tooltip("Whether to show info logs in the Unity console")]
         public bool EnableInfoLogs = true;
+
+        [Tooltip("Optional: Full path to the npm executable (e.g., /Users/user/.asdf/shims/npm or C:\\path\\to\\npm.cmd). If not set, 'npm' from the system PATH will be used.")]
+        public string NpmExecutablePath = string.Empty;
+        
+        [Tooltip("Allow connections from remote MCP bridges. When disabled, only localhost connections are allowed (default).")]
+        public bool AllowRemoteConnections = false;
 
         /// <summary>
         /// Singleton instance of settings
@@ -56,7 +61,6 @@ namespace McpUnity.Unity
         private McpUnitySettings() 
         { 
             LoadSettings();
-            VsCodeWorkspaceUtils.AddPackageCacheToWorkspace();
         }
 
         /// <summary>
@@ -71,6 +75,11 @@ namespace McpUnity.Unity
                 {
                     string json = File.ReadAllText(SettingsPath);
                     JsonUtility.FromJsonOverwrite(json, this);
+                }
+                else
+                {
+                    // Create default settings file on the first time initialization
+                    SaveSettings();
                 }
             }
             catch (Exception ex)

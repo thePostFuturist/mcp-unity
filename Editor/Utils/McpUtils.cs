@@ -73,7 +73,9 @@ namespace McpUnity.Utils
                 
             if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
             {
-                return Path.Combine(packageInfo.resolvedPath, "Server~");
+                string serverPath = Path.Combine(packageInfo.resolvedPath, "Server~");
+
+                return CleanPathPrefix(serverPath);
             }
             
             var assets = AssetDatabase.FindAssets("tsconfig");
@@ -82,7 +84,9 @@ namespace McpUnity.Utils
             {
                 // Convert relative path to absolute path
                 var relativePath = AssetDatabase.GUIDToAssetPath(assets[0]);
-                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
+                string fullPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
+
+                return CleanPathPrefix(fullPath);
             }
             if (assets.Length > 0)
             {
@@ -90,10 +94,10 @@ namespace McpUnity.Utils
                 {
                     string relativePath = AssetDatabase.GUIDToAssetPath(assetJson);
                     string fullPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-                    
+
                     if(Path.GetFileName(Path.GetDirectoryName(fullPath)) == "Server~")
                     {
-                        return Path.GetDirectoryName(fullPath);
+                        return CleanPathPrefix(Path.GetDirectoryName(fullPath));
                     }
                 }
             }
@@ -104,6 +108,20 @@ namespace McpUnity.Utils
             Debug.LogError(errorString);
 
             return errorString;
+        }
+
+        /// <summary>
+        /// Cleans the path prefix by removing a leading "~" character if present on macOS.
+        /// </summary>
+        /// <param name="path">The path to clean.</param>
+        /// <returns>The cleaned path.</returns>
+        private static string CleanPathPrefix(string path)
+        {
+            if (path.StartsWith("~"))
+            {
+                return path.Substring(1);
+            }
+            return path;
         }
 
         /// <summary>
@@ -132,6 +150,24 @@ namespace McpUnity.Utils
             string configFilePath = GetCursorConfigPath();
             return AddToConfigFile(configFilePath, useTabsIndentation, "Cursor");
         }
+        
+        /// <summary>
+        /// Adds the MCP configuration to the Claude Code config file
+        /// </summary>
+        public static bool AddToClaudeCodeConfig(bool useTabsIndentation)
+        {
+            string configFilePath = GetClaudeCodeConfigPath();
+            return AddToConfigFile(configFilePath, useTabsIndentation, "Claude Code");
+        }
+
+        /// <summary>
+        /// Adds the MCP configuration to the GitHub Copilot config file
+        /// </summary>
+        public static bool AddToGitHubCopilotConfig(bool useTabsIndentation)
+        {
+            string configFilePath = GetGitHubCopilotConfigPath();
+            return AddToConfigFile(configFilePath, useTabsIndentation, "GitHub Copilot");
+        }
 
         /// <summary>
         /// Common method to add MCP configuration to a specified config file
@@ -150,36 +186,17 @@ namespace McpUnity.Utils
                 
             // Generate fresh MCP config JSON
             string mcpConfigJson = GenerateMcpConfigJson(useTabsIndentation);
-                
-            // Parse the MCP config JSON
-            JObject mcpConfig = JObject.Parse(mcpConfigJson);
             
             try
             {
+                // Parse the MCP config JSON
+                JObject mcpConfig = JObject.Parse(mcpConfigJson);
+
                 // Check if the file exists
                 if (File.Exists(configFilePath))
                 {
-                    // Read the existing config
-                    string existingConfigJson = File.ReadAllText(configFilePath);
-                    JObject existingConfig = string.IsNullOrEmpty(existingConfigJson) ? new JObject() : JObject.Parse(existingConfigJson);
-                    
-                    // Merge the mcpServers from our config into the existing config
-                    if (mcpConfig["mcpServers"] != null && mcpConfig["mcpServers"] is JObject mcpServers)
+                    if (TryMergeMcpServers(configFilePath, mcpConfig, productName))
                     {
-                        // Create mcpServers object if it doesn't exist
-                        if (existingConfig["mcpServers"] == null)
-                        {
-                            existingConfig["mcpServers"] = new JObject();
-                        }
-                        
-                        // Add or update the mcp-unity server config
-                        if (mcpServers["mcp-unity"] != null)
-                        {
-                            ((JObject)existingConfig["mcpServers"])["mcp-unity"] = mcpServers["mcp-unity"];
-                        }
-                        
-                        // Write the updated config back to the file
-                        File.WriteAllText(configFilePath, existingConfig.ToString(Formatting.Indented));
                         return true;
                     }
                 }
@@ -263,9 +280,7 @@ namespace McpUnity.Utils
             // Return the path to the claude_desktop_config.json file
             return Path.Combine(basePath, "claude_desktop_config.json");
         }
-        
-        
-        
+
         /// <summary>
         /// Gets the path to the Cursor config file based on the current OS
         /// </summary>
@@ -298,6 +313,48 @@ namespace McpUnity.Utils
         }
 
         /// <summary>
+        /// Gets the path to the Claude Code config file based on the current OS
+        /// </summary>
+        /// <returns>The path to the Claude Code config file</returns>
+        private static string GetClaudeCodeConfigPath()
+        {
+            // Returns the absolute path to the global Claude configuration file.
+            // Windows: %USERPROFILE%\.claude.json
+            // macOS/Linux: $HOME/.claude.json
+            string homeDir;
+
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                // Windows: %USERPROFILE%\.claude.json
+                homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            }
+            else if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                // macOS: ~/.claude.json
+                homeDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            }
+            else
+            {
+                Debug.LogError("Unsupported platform for Claude configuration path resolution");
+                return null;
+            }
+
+            return Path.Combine(homeDir, ".claude.json");
+        }
+
+        /// <summary>
+        /// Gets the path to the GitHub Copilot config file (workspace .vscode/mcp.json)
+        /// </summary>
+        /// <returns>The path to the GitHub Copilot config file</returns>
+        private static string GetGitHubCopilotConfigPath()
+        {
+            // Default to current Unity project root/.vscode/mcp.json
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            string vscodeDir = Path.Combine(projectRoot, ".vscode");
+            return Path.Combine(vscodeDir, "mcp.json");
+        }
+
+        /// <summary>
         /// Runs an npm command (such as install or build) in the specified working directory.
         /// Handles cross-platform compatibility (Windows/macOS/Linux) for invoking npm.
         /// Logs output and errors to the Unity console.
@@ -306,25 +363,41 @@ namespace McpUnity.Utils
         /// <param name="workingDirectory">The working directory where the npm command should be executed.</param>
         public static void RunNpmCommand(string arguments, string workingDirectory)
         {
-            string shellCommand = "/bin/bash";
-            string shellArguments = $"-c \"npm {arguments}\"";
-
-            if (Application.platform == RuntimePlatform.WindowsEditor)
-            {
-                shellCommand = "cmd.exe";
-                shellArguments = $"/c npm {arguments}";
-            }
+            string npmExecutable = McpUnitySettings.Instance.NpmExecutablePath;
+            bool useCustomNpmPath = !string.IsNullOrWhiteSpace(npmExecutable);
 
             System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = shellCommand,
-                Arguments = shellArguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                UseShellExecute = false,
+                UseShellExecute = false, // Important for redirection and direct execution
                 CreateNoWindow = true
             };
+
+            if (useCustomNpmPath)
+            {
+                // Use the custom path directly
+                startInfo.FileName = npmExecutable;
+                startInfo.Arguments = arguments;
+            }
+            else if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                // Fallback to cmd.exe to find 'npm' in PATH
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = $"/c npm {arguments}";
+            }
+            else // macOS / Linux
+            {
+                // Fallback to /bin/bash to find 'npm' in PATH
+                startInfo.FileName = "/bin/bash";
+                startInfo.Arguments = $"-c \"npm {arguments}\"";
+
+                // Ensure PATH includes common npm locations and current PATH
+                string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                string extraPaths = "/usr/local/bin:/opt/homebrew/bin";
+                startInfo.EnvironmentVariables["PATH"] = $"{extraPaths}:{currentPath}";
+            }
 
             try
             {
@@ -343,25 +416,87 @@ namespace McpUnity.Utils
 
                     if (process.ExitCode == 0)
                     {
-                        Debug.Log($"[MCP Unity] npm {arguments} completed successfully in {workingDirectory}.");
+                        Debug.Log($"[MCP Unity] npm {arguments} completed successfully in {workingDirectory}.\n{output}");
                     }
                     else
                     {
-                        Debug.LogError($"[MCP Unity] npm {arguments} failed in {workingDirectory}. Exit Code: {process.ExitCode}");
+                        Debug.LogError($"[MCP Unity] npm {arguments} failed in {workingDirectory}. Exit Code: {process.ExitCode}. Error: {error}");
                     }
-                    
-                    if (!string.IsNullOrEmpty(output)) Debug.Log($"[MCP Unity] Output:\n{output}");
-                    if (!string.IsNullOrEmpty(error)) Debug.LogError($"[MCP Unity] Error:\n{error}");
                 }
-            }
-            catch (System.ComponentModel.Win32Exception ex) // Catch specific exception for "file not found"
-            {
-                Debug.LogError($"[MCP Unity] Failed to run npm command '{shellCommand} {shellArguments}'. Ensure Node.js and npm are installed and in your system's PATH. Error: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MCP Unity] Exception while running npm command '{shellCommand} {shellArguments}' in {workingDirectory}: {ex.Message}\nDetails: {ex.StackTrace}");
+                // Use commandToLog here
+                Debug.LogError($"[MCP Unity] Exception while running npm {arguments} in {workingDirectory}. Error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Returns the appropriate config JObject for merging MCP server settings,
+        /// with special handling for "Claude Code":
+        /// - For most products, returns the root config object.
+        /// - For "Claude Code", returns the project-specific config under "projects/[serverPathParent]".
+        /// Throws a MissingMemberException if the expected project entry does not exist.
+        /// </summary>
+        private static JObject GetMcpServersConfig(JObject existingConfig, string productName)
+        {
+            // For most products, use the root config object.
+            if (productName != "Claude Code")
+            {
+                return existingConfig;
+            }
+
+            // For Claude Code, use the project-specific config.
+            if (existingConfig["projects"] == null)
+            {
+                throw new MissingMemberException("Claude Code config error: Could not find 'projects' entry in existing config.");
+            }
+
+            string serverPath = GetServerPath();
+            string serverPathParent = Path.GetDirectoryName(serverPath)?.Replace("\\", "/");
+            var projectConfig = existingConfig["projects"][serverPathParent];
+
+            if (projectConfig == null)
+            {
+                throw new MissingMemberException(
+                    $"Claude Code config error: Could not find project entry for parent directory '{serverPathParent}' in existing config."
+                );
+            }
+
+            return (JObject)projectConfig;
+        }
+
+        /// <summary>
+        /// Helper to merge mcpServers from mcpConfig into the existing config file.
+        /// </summary>
+        private static bool TryMergeMcpServers(string configFilePath, JObject mcpConfig, string productName)
+        {
+            // Read the existing config
+            string existingConfigJson = File.ReadAllText(configFilePath);
+            JObject existingConfig = string.IsNullOrEmpty(existingConfigJson) ? new JObject() : JObject.Parse(existingConfigJson);
+            JObject mcpServersConfig = GetMcpServersConfig(existingConfig, productName);
+
+            // Merge the mcpServers from our config into the existing config
+            if (mcpConfig["mcpServers"] != null && mcpConfig["mcpServers"] is JObject mcpServers)
+            {
+                // Create mcpServers object if it doesn't exist
+                if (mcpServersConfig["mcpServers"] == null)
+                {
+                    mcpServersConfig["mcpServers"] = new JObject();
+                }
+
+                // Add or update the mcp-unity server config
+                if (mcpServers["mcp-unity"] != null)
+                {
+                    ((JObject)mcpServersConfig["mcpServers"])["mcp-unity"] = mcpServers["mcp-unity"];
+                }
+
+                // Write the updated config back to the file
+                File.WriteAllText(configFilePath, existingConfig.ToString(Formatting.Indented));
+                return true;
+            }
+
+            return false;
         }
     }
 }

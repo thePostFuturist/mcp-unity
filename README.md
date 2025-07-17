@@ -85,19 +85,6 @@ The following tools are available for manipulating and querying Unity scenes and
 - `add_asset_to_scene`: Adds an asset from the AssetDatabase to the Unity scene
   > **Example prompt:** "Add the Player prefab from my project to the current scene"
 
-- `take_screenshot`: Captures the Game View and saves it under `Assets/Screenshots`
-  > **Example prompt:** "Take a screenshot of the Game View"
-
-- `get_screenshot_function`: Retrieves the first screenshot image from `Assets/Screenshots`
-  > **Example prompt:** "Show me the most recent screenshot"
-
-- `create_text_asset`: Creates a text file inside the Unity project
-  > **Example prompt:** "Create a README.txt file in Assets/Docs with custom content"
-
-- `get_text_asset`: Reads the contents of a text file from the Unity project
-  > **Example prompt:** "Show me the contents of Assets/Docs/README.txt"
-
-
 ### MCP Server Resources
 
 - `unity://menu-items`: Retrieves a list of all available menu items in the Unity Editor to facilitate `execute_menu_item` tool
@@ -121,30 +108,31 @@ The following tools are available for manipulating and querying Unity scenes and
 - `unity://tests/{testMode}`: Retrieves information about tests in the Unity Test Runner
   > **Example prompt:** "List all available tests in my Unity project"
 
-- `unity://screenshot`: Retrieves the first screenshot image from `Assets/Screenshots`
-  > **Example prompt:** "Get the latest screenshot from my project"
-
 ## Requirements
 - Unity 2022.3 or later - to [install the server](#install-server)
 - Node.js 18 or later - to [start the server](#start-server)
 - npm 9 or later - to [debug the server](#debug-server)
 
+> [!IMPORTANT]
+> **Project Path Cannot Contain Spaces**
+>
+> It is crucial that the file path to your Unity project **does not contain any spaces**.
+> If your project path includes spaces, the MCP Client (e.g., Cursor, Claude, Windsurf) will fail to connect to the MCP Unity server.
+>
+> **Examples:**
+> -   ✅ **Works:** `C:\Users\YourUser\Documents\UnityProjects\MyAwesomeGame`
+> -   ❌ **Fails:** `C:\Users\Your User\Documents\Unity Projects\My Awesome Game`
+>
+> Please ensure your project is located in a path without spaces before proceeding with the installation.
+
 ## <a name="install-server"></a>Installation
 
 Installing this MCP Unity Server is a multi-step process:
 
-### Step 1: Install Unity MCP Server package via Unity Package Manager
-1. Open the Unity Package Manager (Window > Package Manager)
-2. Click the "+" button in the top-left corner
-3. Select "Add package from git URL..."
-4. Enter: `https://github.com/CoderGamester/mcp-unity.git`
-5. Click "Add"
-
-![package manager](https://github.com/user-attachments/assets/a72bfca4-ae52-48e7-a876-e99c701b0497)
-
-
-### Step 2: Install Node.js 
+### Step 1: Install Node.js 
 > To run MCP Unity server, you'll need to have Node.js 18 or later installed on your computer:
+
+![node](docs/node.jpg)
 
 <details>
 <summary><span style="font-size: 1.1em; font-weight: bold;">Windows</span></summary>
@@ -174,6 +162,15 @@ Installing this MCP Unity Server is a multi-step process:
    ```
 </details>
 
+### Step 2: Install Unity MCP Server package via Unity Package Manager
+1. Open the Unity Package Manager (Window > Package Manager)
+2. Click the "+" button in the top-left corner
+3. Select "Add package from git URL..."
+4. Enter: `https://github.com/CoderGamester/mcp-unity.git`
+5. Click "Add"
+
+![package manager](https://github.com/user-attachments/assets/a72bfca4-ae52-48e7-a876-e99c701b0497)
+
 ### Step 3: Configure AI LLM Client
 
 <details open>
@@ -183,7 +180,7 @@ Installing this MCP Unity Server is a multi-step process:
 2. Navigate to Tools > MCP Unity > Server Window
 3. Click on the "Configure" button for your AI LLM client as shown in the image below
 
-![image](https://github.com/user-attachments/assets/8d286e83-da60-40fa-bd6c-5de9a77c1820)
+![image](docs/configure.jpg)
 
 4. Confirm the configuration installation with the given popup
 
@@ -223,29 +220,6 @@ Open the MCP configuration file of your AI client (e.g. claude_desktop_config.js
 
 > When the AI client connects to the WebSocket server, it will automatically show in the green box in the window
 
-## Usage
-
-Once both the Unity server and the Node.js server are running, connect your MCP-enabled IDE or AI assistant. You can then trigger tools and fetch resources with natural language prompts. Examples include:
-
-- **Take a screenshot** using the `take_screenshot` tool.
-- **Retrieve the latest screenshot** using the `get_screenshot_function` tool or the `unity://screenshot` resource.
-- **List installed packages** with the `unity://packages` resource.
-
-## Optional: Set WebSocket Port
-By default, the WebSocket server runs on port 8090. You can change this port in two ways:
-
-## Optional: Install Node.js Server
-By default, the Node.js server is installed in the `Server~/` directory. 
-In case of issues, you can force install it in by:
-
-
-1. Open the Unity Editor
-2. Navigate to Tools > MCP Unity > Server Window
-3. Click on "Force Install Server" button
-
-> [!TIP]  
-> The Node.js server is installed in the `Server~/` directory.
-
 ## Optional: Set WebSocket Port
 By default, the WebSocket server runs on port '8090'. You can change this port in two ways:
 
@@ -271,13 +245,32 @@ You can change depending on the OS you are using:
 > [!TIP]  
 > The timeout between your AI Coding IDE (e.g., Claude Desktop, Cursor IDE, Windsurf IDE) and the MCP Server depends on the IDE.
 
+## Optional: Allow Remote MCP Bridge Connections
+
+By default, the WebSocket server binds to 'localhost'. To allow MCP bridge connections from other machines:
+
+1. Open the Unity Editor
+2. Navigate to Tools > MCP Unity > Server Window
+3. Enable the "Allow Remote Connections" checkbox
+4. Unity will bind the WebSocket server to '0.0.0.0' (all interfaces)
+5. Restart the Node.js server to apply the new host configuration
+6. Set the environment variable UNITY_HOST to your Unity machine's IP address when running the MCP bridge remotely: `UNITY_HOST=192.168.1.100 node server.js`
+
 ## <a name="debug-server"></a>Debugging the Server
 
 <details>
 <summary><span style="font-size: 1.1em; font-weight: bold;">Building the Node.js Server</span></summary>
 
 The MCP Unity server is built using Node.js . It requires to compile the TypeScript code to JavaScript in the `build` directory.
-This process is automatically handled by the Unity Editor when you click on "Start Server", but if you want to build it manually, you can follow these steps:
+In case of issues, you can force install it in by:
+
+1. Open the Unity Editor
+2. Navigate to Tools > MCP Unity > Server Window
+3. Click on "Force Install Server" button
+
+![install](docs/install.jpg)
+
+If you want to build it manually, you can follow these steps:
 
 1. Open a terminal/PowerShell/Command Prompt
 
