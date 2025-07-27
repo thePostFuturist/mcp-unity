@@ -1,0 +1,16 @@
+# Symlink Configuration File
+# Format: SOURCE_PATH|DESTINATION_PATH|TYPE
+# TYPE can be: FILE or DIR
+# Lines starting with # are comments
+# Use full paths or relative paths
+
+# Example directory symlinks
+D:\Dev\Sandbox\mcp-unity\Editor|D:\Dev\DigitRaver\Assets\MCP\Editor|DIR
+D:\Dev\Sandbox\mcp-unity\Server~|D:\Dev\DigitRaver\Server~|DIR
+
+# Example file symlinks
+# C:\Source\config.ini|C:\Destination\config.ini|FILE
+# C:\Source\readme.txt|C:\Destination\readme.txt|FILE
+
+# You can also use relative paths
+# .\source_folder|.\dest_folder|DIR
