@@ -68,7 +68,14 @@ namespace McpUnity.Utils
         /// </summary>
         public static string GetServerPath()
         {
-            // First, try to find the package info via Package Manager
+            // First, check if Server~ exists in the project root (as sibling to Assets)
+            string rootServerPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Server~"));
+            if (Directory.Exists(rootServerPath) && File.Exists(Path.Combine(rootServerPath, "package.json")))
+            {
+                return rootServerPath;
+            }
+            
+            // Next, try to find the package info via Package Manager
             var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath($"Packages/{McpUnitySettings.PackageName}");
                 
             if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
