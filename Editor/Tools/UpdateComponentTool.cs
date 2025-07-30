@@ -101,10 +101,27 @@ namespace McpUnity.Tools
                 McpLogger.LogInfo($"[MCP Unity] Added component '{componentName}' to GameObject '{gameObject.name}'");
             }
             
+            string errorMessage = "";
+            bool success = false;
             // Update component fields
             if (componentData != null && componentData.Count > 0)
             {
-                UpdateComponentData(component, componentData);
+                success = UpdateComponentData(component, componentData, out errorMessage);
+            }
+
+            // If update failed, return error
+            if (!success)
+            {
+                if (wasAdded)
+                {
+                    return McpUnitySocketHandler.CreateErrorResponse(
+                        $"Successfully added component '{componentName}' to GameObject '{gameObject.name}' BUT\n" +
+                        errorMessage, "component_error");
+                }
+                else
+                {
+                    return McpUnitySocketHandler.CreateErrorResponse(errorMessage, "update_error");
+                }
             }
             
             // Ensure changes are saved
@@ -236,19 +253,21 @@ namespace McpUnity.Tools
         /// <param name="component">The component to update</param>
         /// <param name="componentData">The data to apply to the component</param>
         /// <returns>True if the component was updated successfully</returns>
-        private bool UpdateComponentData(Component component, JObject componentData)
+        private bool UpdateComponentData(Component component, JObject componentData, out string errorMessage)
         {
+            errorMessage = "";
             if (component == null || componentData == null)
             {
+                errorMessage = "Component or component data is null";
                 return false;
             }
-            
+
             Type componentType = component.GetType();
-            bool anySuccess = false;
-            
+            bool gotFailure = false;
+
             // Record object for undo
             Undo.RecordObject(component, $"Update {componentType.Name} fields");
-            
+
             // Process each field in the component data
             foreach (var property in componentData.Properties())
             {
@@ -269,18 +288,19 @@ namespace McpUnity.Tools
                 {
                     object value = ConvertJTokenToValue(fieldValue, fieldInfo.FieldType);
                     fieldInfo.SetValue(component, value);
-                    anySuccess = true;
                     continue;
                 }
                 else
                 {
-                    McpLogger.LogWarning($"Field '{fieldName}' not found on component '{componentType.Name}'");
+                    errorMessage = $"Field '{fieldName}' not found on component '{componentType.Name}'";
+                    McpLogger.LogError(errorMessage);
+                    gotFailure = true;
                 }
             }
-            
-            return anySuccess;
+
+            return !gotFailure;
         }
-        
+
         /// <summary>
         /// Convert a JToken to a value of the specified type
         /// </summary>
