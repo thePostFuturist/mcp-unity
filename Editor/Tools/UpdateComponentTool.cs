@@ -263,7 +263,7 @@ namespace McpUnity.Tools
             }
 
             Type componentType = component.GetType();
-            bool gotFailure = false;
+            bool fullSuccess = true;
 
             // Record object for undo
             Undo.RecordObject(component, $"Update {componentType.Name} fields");
@@ -294,11 +294,11 @@ namespace McpUnity.Tools
                 {
                     errorMessage = $"Field '{fieldName}' not found on component '{componentType.Name}'";
                     McpLogger.LogError(errorMessage);
-                    gotFailure = true;
+                    fullSuccess = false;
                 }
             }
 
-            return !gotFailure;
+            return fullSuccess;
         }
 
         /// <summary>
