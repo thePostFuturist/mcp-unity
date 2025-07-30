@@ -97,23 +97,44 @@ namespace McpUnity.Tools
                 }
                 
                 component = Undo.AddComponent(gameObject, componentType);
+
+                // Ensure changes are saved
+                EditorUtility.SetDirty(gameObject);
+                if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+                }
                 wasAdded = true;
                 McpLogger.LogInfo($"[MCP Unity] Added component '{componentName}' to GameObject '{gameObject.name}'");
             }
-            
             // Update component fields
             if (componentData != null && componentData.Count > 0)
             {
-                UpdateComponentData(component, componentData);
+                bool success = UpdateComponentData(component, componentData, out string errorMessage);
+                // If update failed, return error
+                if (!success)
+                {
+                    if (wasAdded)
+                    {
+                        return McpUnitySocketHandler.CreateErrorResponse(
+                            $"Successfully added component '{componentName}' to GameObject '{gameObject.name}' BUT\n" +
+                            errorMessage, "component_error");
+                    }
+                    else
+                    {
+                        return McpUnitySocketHandler.CreateErrorResponse(errorMessage, "update_error");
+                    }
+                }
+
+                // Ensure field changes are saved
+                EditorUtility.SetDirty(gameObject);
+                if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+                }
+
             }
-            
-            // Ensure changes are saved
-            EditorUtility.SetDirty(gameObject);
-            if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
-            {
-                PrefabUtility.RecordPrefabInstancePropertyModifications(component);
-            }
-            
+
             // Create the response
             return new JObject
             {
@@ -236,19 +257,21 @@ namespace McpUnity.Tools
         /// <param name="component">The component to update</param>
         /// <param name="componentData">The data to apply to the component</param>
         /// <returns>True if the component was updated successfully</returns>
-        private bool UpdateComponentData(Component component, JObject componentData)
+        private bool UpdateComponentData(Component component, JObject componentData, out string errorMessage)
         {
+            errorMessage = "";
             if (component == null || componentData == null)
             {
+                errorMessage = "Component or component data is null";
                 return false;
             }
-            
+
             Type componentType = component.GetType();
-            bool anySuccess = false;
-            
+            bool fullSuccess = true;
+
             // Record object for undo
             Undo.RecordObject(component, $"Update {componentType.Name} fields");
-            
+
             // Process each field in the component data
             foreach (var property in componentData.Properties())
             {
@@ -256,7 +279,7 @@ namespace McpUnity.Tools
                 JToken fieldValue = property.Value;
                 
                 // Skip null values
-                if (fieldValue.Type == JTokenType.Null)
+                if (string.IsNullOrEmpty(fieldName) || fieldValue.Type == JTokenType.Null)
                 {
                     continue;
                 }
@@ -269,18 +292,19 @@ namespace McpUnity.Tools
                 {
                     object value = ConvertJTokenToValue(fieldValue, fieldInfo.FieldType);
                     fieldInfo.SetValue(component, value);
-                    anySuccess = true;
                     continue;
                 }
                 else
                 {
-                    McpLogger.LogWarning($"Field '{fieldName}' not found on component '{componentType.Name}'");
+                    errorMessage = $"Field '{fieldName}' not found on component '{componentType.Name}'";
+                    McpLogger.LogError(errorMessage);
+                    fullSuccess = false;
                 }
             }
-            
-            return anySuccess;
+
+            return fullSuccess;
         }
-        
+
         /// <summary>
         /// Convert a JToken to a value of the specified type
         /// </summary>
