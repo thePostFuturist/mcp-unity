@@ -125,15 +125,16 @@ namespace McpUnity.Tools
                         return McpUnitySocketHandler.CreateErrorResponse(errorMessage, "update_error");
                     }
                 }
+
+                // Ensure field changes are saved
+                EditorUtility.SetDirty(gameObject);
+                if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+                }
+
             }
-            
-            // Ensure changes are saved
-            EditorUtility.SetDirty(gameObject);
-            if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
-            {
-                PrefabUtility.RecordPrefabInstancePropertyModifications(component);
-            }
-            
+
             // Create the response
             return new JObject
             {
