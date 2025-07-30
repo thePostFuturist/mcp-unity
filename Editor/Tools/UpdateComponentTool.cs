@@ -97,30 +97,33 @@ namespace McpUnity.Tools
                 }
                 
                 component = Undo.AddComponent(gameObject, componentType);
+
+                // Ensure changes are saved
+                EditorUtility.SetDirty(gameObject);
+                if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+                }
                 wasAdded = true;
                 McpLogger.LogInfo($"[MCP Unity] Added component '{componentName}' to GameObject '{gameObject.name}'");
             }
-            
-            string errorMessage = "";
-            bool success = false;
             // Update component fields
             if (componentData != null && componentData.Count > 0)
             {
-                success = UpdateComponentData(component, componentData, out errorMessage);
-            }
-
-            // If update failed, return error
-            if (!success)
-            {
-                if (wasAdded)
+                bool success = UpdateComponentData(component, componentData, out string errorMessage);
+                // If update failed, return error
+                if (!success)
                 {
-                    return McpUnitySocketHandler.CreateErrorResponse(
-                        $"Successfully added component '{componentName}' to GameObject '{gameObject.name}' BUT\n" +
-                        errorMessage, "component_error");
-                }
-                else
-                {
-                    return McpUnitySocketHandler.CreateErrorResponse(errorMessage, "update_error");
+                    if (wasAdded)
+                    {
+                        return McpUnitySocketHandler.CreateErrorResponse(
+                            $"Successfully added component '{componentName}' to GameObject '{gameObject.name}' BUT\n" +
+                            errorMessage, "component_error");
+                    }
+                    else
+                    {
+                        return McpUnitySocketHandler.CreateErrorResponse(errorMessage, "update_error");
+                    }
                 }
             }
             
@@ -275,7 +278,7 @@ namespace McpUnity.Tools
                 JToken fieldValue = property.Value;
                 
                 // Skip null values
-                if (fieldValue.Type == JTokenType.Null)
+                if (string.IsNullOrEmpty(fieldName) || fieldValue.Type == JTokenType.Null)
                 {
                     continue;
                 }
