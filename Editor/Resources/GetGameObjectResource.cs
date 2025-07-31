@@ -15,8 +15,8 @@ namespace McpUnity.Resources
         public GetGameObjectResource()
         {
             Name = "get_gameobject";
-            Description = "Retrieves detailed information about a specific GameObject by instance ID";
-            Uri = "unity://gameobject/{id}";
+            Description = "Retrieves detailed information about a specific GameObject by instance ID or object name or path";
+            Uri = "unity://gameobject/{idOrName}";
         }
         
         /// <summary>
@@ -27,28 +27,39 @@ namespace McpUnity.Resources
         public override JObject Fetch(JObject parameters)
         {
             // Validate parameters
-            if (parameters == null || !parameters.ContainsKey("objectPathId"))
+            if (parameters == null || !parameters.ContainsKey("idOrName"))
             {
                 return new JObject
                 {
                     ["success"] = false,
-                    ["message"] = "Missing required parameter: objectPathId"
+                    ["message"] = "Missing required parameter: idOrName"
                 };
             }
 
-            string objectPathId = parameters["objectPathId"]?.ToObject<string>();
+            string idOrName = parameters["idOrName"]?.ToObject<string>();
+            
+            if (string.IsNullOrEmpty(idOrName))
+            {
+                return new JObject
+                {
+                    ["success"] = false,
+                    ["message"] = "Parameter 'objectPathId' cannot be null or empty"
+                };
+            }
+
             GameObject gameObject = null;
             
             // Try to parse as an instance ID first
-            if (int.TryParse(objectPathId, out int instanceId))
+            if (int.TryParse(idOrName, out int instanceId))
             {
-                // If it's a valid integer, try to find by instance ID
-                gameObject = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
+                // Unity Instance IDs are typically negative, but we'll accept any integer
+                UnityEngine.Object unityObject = EditorUtility.InstanceIDToObject(instanceId);
+                gameObject = unityObject as GameObject;
             }
             else
             {
-                // Otherwise, treat it as a path
-                gameObject = GameObject.Find(objectPathId);
+                // Otherwise, treat it as a name or hierarchical path
+                gameObject = GameObject.Find(idOrName);
             }
             
             // Check if the GameObject was found
@@ -57,7 +68,7 @@ namespace McpUnity.Resources
                 return new JObject
                 {
                     ["success"] = false,
-                    ["message"] = $"GameObject with path '{objectPathId}' not found"
+                    ["message"] = $"GameObject with '{idOrName}' reference not found. Make sure the GameObject exists and is loaded in the current scene(s)."
                 };
             }
 
@@ -69,7 +80,8 @@ namespace McpUnity.Resources
             {
                 ["success"] = true,
                 ["message"] = $"Retrieved GameObject data for '{gameObject.name}'",
-                ["gameObject"] = gameObjectData
+                ["gameObject"] = gameObjectData,
+                ["instanceId"] = gameObject.GetInstanceID()
             };
         }
 

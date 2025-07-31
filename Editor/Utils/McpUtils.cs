@@ -195,10 +195,7 @@ namespace McpUnity.Utils
                 // Check if the file exists
                 if (File.Exists(configFilePath))
                 {
-                    if (TryMergeMcpServers(configFilePath, mcpConfig, productName))
-                    {
-                        return true;
-                    }
+                    return TryMergeMcpServers(configFilePath, mcpConfig, productName);
                 }
                 else if(Directory.Exists(Path.GetDirectoryName(configFilePath)))
                 {

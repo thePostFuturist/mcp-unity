@@ -16,7 +16,7 @@ namespace McpUnity.Tools
         public SelectGameObjectTool()
         {
             Name = "select_gameobject";
-            Description = "Sets the selected GameObject in the Unity editor by path or instance ID";
+            Description = "Sets the selected GameObject in the Unity editor by path, name or instance ID";
         }
         
         /// <summary>
@@ -27,13 +27,14 @@ namespace McpUnity.Tools
         {
             // Extract parameters
             string objectPath = parameters["objectPath"]?.ToObject<string>();
+            string objectName = parameters["objectName"]?.ToObject<string>();
             int? instanceId = parameters["instanceId"]?.ToObject<int?>();
             
             // Validate parameters - require either objectPath or instanceId
-            if (string.IsNullOrEmpty(objectPath) && !instanceId.HasValue)
+            if (string.IsNullOrEmpty(objectPath) && string.IsNullOrEmpty(objectName) && !instanceId.HasValue)
             {
                 return McpUnitySocketHandler.CreateErrorResponse(
-                    "Required parameter 'objectPath' or 'instanceId' not provided", 
+                    "Required parameter 'objectPath', 'objectName' or 'instanceId' not provided", 
                     "validation_error"
                 );
             }
@@ -44,26 +45,29 @@ namespace McpUnity.Tools
                 Selection.activeGameObject = EditorUtility.InstanceIDToObject(instanceId.Value) as GameObject;
             }
             // Otherwise, try to find by object path/name if provided
-            else
+            else if (!string.IsNullOrEmpty(objectPath))
             {
                 // Try to find the object by path in the hierarchy
                 Selection.activeGameObject = GameObject.Find(objectPath);
+            }
+            else if (!string.IsNullOrEmpty(objectName))
+            {
+                // Try to find the object by name in the hierarchy
+                Selection.activeGameObject = GameObject.Find(objectName);
             }
 
             // Ping the selected object
             EditorGUIUtility.PingObject(Selection.activeGameObject);
             
             // Log the selection
-            McpLogger.LogInfo($"[MCP Unity] Selected GameObject: " +
-                (instanceId.HasValue ? $"Instance ID {instanceId.Value}" : $"Path '{objectPath}'"));
+            McpLogger.LogInfo($"[MCP Unity] Selected GameObject: {Selection.activeGameObject.name}"));
             
             // Create the response
             return new JObject
             {
                 ["success"] = true,
                 ["type"] = "text",
-                ["message"] = $"Successfully selected GameObject" + 
-                    (instanceId.HasValue ? $" with instance ID: {instanceId.Value}" : $": {objectPath}")
+                ["message"] = $"Successfully selected GameObject {Selection.activeGameObject.name}"
             };
         }
     }

@@ -249,7 +249,7 @@ namespace McpUnity.Tools
             // Record object for undo
             Undo.RecordObject(component, $"Update {componentType.Name} fields");
             
-            // Process each field in the component data
+            // Process each field or property in the component data
             foreach (var property in componentData.Properties())
             {
                 string fieldName = property.Name;
@@ -272,10 +272,21 @@ namespace McpUnity.Tools
                     anySuccess = true;
                     continue;
                 }
-                else
+                
+                // Try to update property if not found as a field
+                PropertyInfo propertyInfo = componentType.GetProperty(fieldName, 
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                
+                if (propertyInfo != null)
                 {
-                    McpLogger.LogWarning($"Field '{fieldName}' not found on component '{componentType.Name}'");
+                    object value = ConvertJTokenToValue(fieldValue, propertyInfo.PropertyType);
+                    propertyInfo.SetValue(component, value);
+                    anySuccess = true;
+                    continue;
                 }
+                
+                // Try to update field
+                McpLogger.LogWarning($"Field or Property  with name '{fieldName}' not found on component '{componentType.Name}'");
             }
             
             return anySuccess;
