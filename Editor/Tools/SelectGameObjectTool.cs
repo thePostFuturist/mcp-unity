@@ -29,6 +29,7 @@ namespace McpUnity.Tools
             string objectPath = parameters["objectPath"]?.ToObject<string>();
             string objectName = parameters["objectName"]?.ToObject<string>();
             int? instanceId = parameters["instanceId"]?.ToObject<int?>();
+            GameObject selectedGameObject = null;
             
             // Validate parameters - require either objectPath or instanceId
             if (string.IsNullOrEmpty(objectPath) && string.IsNullOrEmpty(objectName) && !instanceId.HasValue)
@@ -42,32 +43,32 @@ namespace McpUnity.Tools
             // First try to find by instance ID if provided
             if (instanceId.HasValue)
             {
-                Selection.activeGameObject = EditorUtility.InstanceIDToObject(instanceId.Value) as GameObject;
+                selectedGameObject = EditorUtility.InstanceIDToObject(instanceId.Value) as GameObject;
             }
-            // Otherwise, try to find by object path/name if provided
             else if (!string.IsNullOrEmpty(objectPath))
             {
                 // Try to find the object by path in the hierarchy
-                Selection.activeGameObject = GameObject.Find(objectPath);
+                selectedGameObject = GameObject.Find(objectPath);
             }
-            else if (!string.IsNullOrEmpty(objectName))
+            else
             {
                 // Try to find the object by name in the hierarchy
-                Selection.activeGameObject = GameObject.Find(objectName);
+                selectedGameObject = GameObject.Find(objectName);
             }
+            
+            Selection.activeGameObject = selectedGameObject;
 
             // Ping the selected object
-            EditorGUIUtility.PingObject(Selection.activeGameObject);
+            EditorGUIUtility.PingObject(selectedGameObject);
             
-            // Log the selection
-            McpLogger.LogInfo($"[MCP Unity] Selected GameObject: {Selection.activeGameObject.name}"));
+            McpLogger.LogInfo($"[MCP Unity] Selected GameObject: {selectedGameObject?.name}");
             
             // Create the response
             return new JObject
             {
                 ["success"] = true,
                 ["type"] = "text",
-                ["message"] = $"Successfully selected GameObject {Selection.activeGameObject.name}"
+                ["message"] = $"Successfully selected GameObject {selectedGameObject?.name}"
             };
         }
     }
