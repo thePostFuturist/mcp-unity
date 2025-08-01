@@ -8,7 +8,7 @@ import { resourceName as hierarchyResourceName } from './getScenesHierarchyResou
 
 // Constants for the resource
 const resourceName = 'get_gameobject';
-const resourceUri = 'unity://gameobject/{id}';
+const resourceUri = 'unity://gameobject/{idOrName}';
 const resourceMimeType = 'application/json';
 
 /**
@@ -36,7 +36,7 @@ export function registerGetGameObjectResource(server: McpServer, mcpUnity: McpUn
     resourceName,
     resourceTemplate,
     {
-      description: 'Retrieve a GameObject by ID or path',
+      description: 'Retrieve a GameObject by instance ID, name, or hierarchical path (e.g., "Parent/Child/MyObject")',
       mimeType: resourceMimeType
     },
     async (uri, variables) => {
@@ -61,13 +61,13 @@ export function registerGetGameObjectResource(server: McpServer, mcpUnity: McpUn
  */
 async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variables, logger: Logger): Promise<ReadResourceResult> {
   // Extract and convert the parameter from the template variables
-  const id = decodeURIComponent(variables["id"] as string);
+  const idOrName = decodeURIComponent(variables["idOrName"] as string);
       
   // Send request to Unity
   const response = await mcpUnity.sendRequest({
     method: resourceName,
     params: {
-      objectPathId: id
+      idOrName: idOrName
     }
   });
   
@@ -80,7 +80,7 @@ async function resourceHandler(mcpUnity: McpUnity, uri: URL, variables: Variable
   
   return {
     contents: [{
-      uri: `unity://gameobject/${id}`,
+      uri: `unity://gameobject/${idOrName}`,
       mimeType: resourceMimeType,
       text: JSON.stringify(response, null, 2)
     }]
